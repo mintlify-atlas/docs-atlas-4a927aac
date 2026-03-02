@@ -1,0 +1,621 @@
+---
+title: "Model Registry"
+description: "Understanding OpenWhispr's centralized model registry system for AI models, transcription engines, and local model management"
+---
+
+OpenWhispr uses a **single source of truth** for all AI model definitions: `src/models/modelRegistryData.json`. This centralized registry powers model selection, downloads, and configuration across the entire app.
+
+## Registry Structure
+
+The registry is organized into five main sections:
+
+<CodeGroup>
+
+```json Registry Overview
+{
+  "parakeetModels": { /* NVIDIA Parakeet ASR models */ },
+  "whisperModels": { /* OpenAI Whisper (GGML) models */ },
+  "transcriptionProviders": [ /* Cloud transcription APIs */ ],
+  "cloudProviders": [ /* Cloud reasoning/AI APIs */ ],
+  "localProviders": [ /* Local LLM models (GGUF) */ ]
+}
+```
+
+```json Parakeet Models
+"parakeetModels": {
+  "parakeet-tdt-0.6b-v3": {
+    "name": "Parakeet TDT 0.6B",
+    "description": "Fast multilingual ASR with auto language detection (25 languages)",
+    "size": "680MB",
+    "sizeMb": 680,
+    "language": "multilingual",
+    "supportedLanguages": ["bg", "hr", "cs", "da", "nl", "en", ...],
+    "recommended": true,
+    "downloadUrl": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2",
+    "extractDir": "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8"
+  }
+}
+```
+
+```json Whisper Models
+"whisperModels": {
+  "base": {
+    "name": "Base",
+    "description": "Good balance",
+    "size": "142MB",
+    "sizeMb": 142,
+    "expectedSizeBytes": 148000000,
+    "fileName": "ggml-base.bin",
+    "downloadUrl": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
+    "recommended": true
+  },
+  "turbo": {
+    "name": "Turbo",
+    "description": "Fast with good quality",
+    "size": "1.6GB",
+    "sizeMb": 1600,
+    "expectedSizeBytes": 1670000000,
+    "fileName": "ggml-large-v3-turbo.bin",
+    "downloadUrl": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin"
+  }
+}
+```
+
+```json Local Providers
+"localProviders": [
+  {
+    "id": "qwen",
+    "name": "Qwen",
+    "baseUrl": "https://huggingface.co",
+    "promptTemplate": "<|im_start|>system\n{system}<|im_end|>\n<|im_start|>user\n{user}<|im_end|>\n<|im_start|>assistant\n",
+    "models": [
+      {
+        "id": "qwen3-8b-q4_k_m",
+        "name": "Qwen3 8B",
+        "size": "5.0GB",
+        "sizeBytes": 5402263552,
+        "description": "Latest Qwen3 with thinking mode support",
+        "fileName": "Qwen3-8B-Q4_K_M.gguf",
+        "quantization": "q4_k_m",
+        "contextLength": 131072,
+        "hfRepo": "Qwen/Qwen3-8B-GGUF",
+        "recommended": true
+      }
+    ]
+  }
+]
+```
+
+</CodeGroup>
+
+## Model Metadata Fields
+
+<Accordion title="Whisper & Parakeet Models">
+  | Field | Type | Description |
+  |-------|------|-------------|
+  | `name` | string | Display name in UI |
+  | `description` | string | User-facing description |
+  | `size` | string | Human-readable size (e.g., "142MB") |
+  | `sizeMb` | number | Size in megabytes (for sorting) |
+  | `expectedSizeBytes` | number | Exact download size for progress bar |
+  | `fileName` | string | Filename on disk after download |
+  | `downloadUrl` | string | Direct HTTP download link |
+  | `recommended` | boolean | Show "Recommended" badge in UI |
+  | `descriptionKey` | string | i18n translation key |
+</Accordion>
+
+<Accordion title="Local GGUF Models">
+  | Field | Type | Description |
+  |-------|------|-------------|
+  | `id` | string | Unique identifier (used in settings) |
+  | `name` | string | Display name |
+  | `size` | string | Human-readable size |
+  | `sizeBytes` | number | Exact size for download validation |
+  | `fileName` | string | GGUF filename |
+  | `quantization` | string | Quantization method (q4_k_m, q5_k_m, etc.) |
+  | `contextLength` | number | Maximum context window |
+  | `hfRepo` | string | HuggingFace repo path |
+  | `recommended` | boolean | Highlight in model picker |
+</Accordion>
+
+<Accordion title="Cloud Providers">
+  | Field | Type | Description |
+  |-------|------|-------------|
+  | `id` | string | Provider identifier (openai, anthropic, gemini) |
+  | `name` | string | Display name |
+  | `models` | array | List of available models |
+  | `models[].id` | string | Model API identifier |
+  | `models[].name` | string | Display name |
+  | `models[].description` | string | Capability description |
+</Accordion>
+
+## How the Registry is Used
+
+### 1. UI Model Selection
+
+**File**: `src/components/WhisperModelPicker.tsx`
+
+```typescript
+import { ModelRegistry } from '@/models/ModelRegistry';
+
+const WhisperModelPicker = () => {
+  const whisperModels = ModelRegistry.getWhisperModels();
+  
+  return (
+    <Select>
+      {Object.entries(whisperModels).map(([id, model]) => (
+        <SelectItem key={id} value={id}>
+          <div>
+            <span>{model.name}</span>
+            <span className="text-xs text-muted">{model.size}</span>
+            {model.recommended && <Badge>Recommended</Badge>}
+          </div>
+        </SelectItem>
+      ))}
+    </Select>
+  );
+};
+```
+
+### 2. Model Downloads
+
+**File**: `src/helpers/whisper.js`
+
+```javascript
+const { whisperModels } = require('../models/modelRegistryData.json');
+
+async downloadModel(modelName) {
+  const model = whisperModels[modelName];
+  if (!model) throw new Error(`Unknown model: ${modelName}`);
+  
+  const modelPath = path.join(this.modelDir, model.fileName);
+  
+  // Download with progress tracking
+  await this.downloadFile(
+    model.downloadUrl,
+    modelPath,
+    model.expectedSizeBytes
+  );
+  
+  // Verify file size
+  const actualSize = fs.statSync(modelPath).size;
+  if (actualSize !== model.expectedSizeBytes) {
+    throw new Error('Download corrupted');
+  }
+}
+```
+
+### 3. Local LLM Downloads
+
+**File**: `src/helpers/modelManagerBridge.js`
+
+Local models use HuggingFace repos with constructed URLs:
+
+```javascript
+const { localProviders } = require('../models/modelRegistryData.json');
+
+function getDownloadUrl(providerId, modelId) {
+  const provider = localProviders.find(p => p.id === providerId);
+  const model = provider.models.find(m => m.id === modelId);
+  
+  // Construct HuggingFace URL
+  return `${provider.baseUrl}/${model.hfRepo}/resolve/main/${model.fileName}`;
+}
+
+// Example output:
+// https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf
+```
+
+### 4. Prompt Templates
+
+**File**: `src/services/localReasoningBridge.js`
+
+Each local provider defines its chat format:
+
+```javascript
+const provider = localProviders.find(p => p.id === 'qwen');
+const promptTemplate = provider.promptTemplate;
+
+// Template: "<|im_start|>system\n{system}<|im_end|>\n..."
+const formattedPrompt = promptTemplate
+  .replace('{system}', systemMessage)
+  .replace('{user}', userMessage);
+
+// Result:
+// <|im_start|>system
+// You are a helpful assistant.
+// <|im_end|>
+// <|im_start|>user
+// What is 2+2?
+// <|im_end|>
+// <|im_start|>assistant
+```
+
+<Note>
+**Prompt templates** ensure each model family (Qwen, Llama, Mistral, Gemma) uses the correct chat format for optimal performance.
+</Note>
+
+## Adding New Models
+
+### Adding a Whisper Model
+
+<Steps>
+  <Step title="Update modelRegistryData.json">
+    Add to `whisperModels` object:
+    ```json
+    "large-v4": {
+      "name": "Large v4",
+      "description": "Newest flagship model",
+      "size": "3.2GB",
+      "sizeMb": 3200,
+      "expectedSizeBytes": 3355443200,
+      "fileName": "ggml-large-v4.bin",
+      "downloadUrl": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v4.bin"
+    }
+    ```
+  </Step>
+  
+  <Step title="No code changes required">
+    The UI, download logic, and model selection automatically pick up the new entry.
+  </Step>
+  
+  <Step title="Test the download">
+    ```bash
+    # In developer console
+    await window.electronAPI.downloadWhisperModel('large-v4');
+    ```
+  </Step>
+</Steps>
+
+### Adding a Local LLM Model
+
+<Steps>
+  <Step title="Find the GGUF file on HuggingFace">
+    Example: `https://huggingface.co/bartowski/Llama-4-8B-GGUF`
+  </Step>
+  
+  <Step title="Add to the appropriate provider">
+    ```json
+    {
+      "id": "llama",
+      "models": [
+        {
+          "id": "llama-4-8b-q4_k_m",
+          "name": "Llama 4 8B",
+          "size": "4.9GB",
+          "sizeBytes": 5282717696,
+          "description": "Latest Llama model",
+          "fileName": "Llama-4-8B-Q4_K_M.gguf",
+          "quantization": "q4_k_m",
+          "contextLength": 131072,
+          "hfRepo": "bartowski/Llama-4-8B-GGUF"
+        }
+      ]
+    }
+    ```
+  </Step>
+  
+  <Step title="Verify prompt template">
+    Llama 4 uses the Llama 3.1+ format:
+    ```
+    <|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system}<|eot_id|>...
+    ```
+    If it's different, create a new provider entry.
+  </Step>
+</Steps>
+
+### Adding a Cloud Provider Model
+
+<Steps>
+  <Step title="Add to cloudProviders">
+    ```json
+    {
+      "id": "openai",
+      "models": [
+        {
+          "id": "gpt-6-preview",
+          "name": "GPT-6 Preview",
+          "description": "Next-generation reasoning model"
+        }
+      ]
+    }
+    ```
+  </Step>
+  
+  <Step title="Update API integration">
+    Modify `src/services/ReasoningService.ts` if the API endpoint or request format changed.
+  </Step>
+</Steps>
+
+## Model Storage Locations
+
+<Tabs>
+  <Tab title="Whisper Models">
+    **Path**: `~/.cache/openwhispr/whisper-models/`
+    
+    ```bash
+    ~/.cache/openwhispr/whisper-models/
+    ├── ggml-tiny.bin
+    ├── ggml-base.bin
+    ├── ggml-small.bin
+    ├── ggml-medium.bin
+    ├── ggml-large-v3.bin
+    └── ggml-large-v3-turbo.bin
+    ```
+    
+    **Cleanup**: Delete via Settings → Storage or `deleteAllWhisperModels()` IPC call
+  </Tab>
+  
+  <Tab title="Parakeet Models">
+    **Path**: `~/.cache/openwhispr/parakeet-models/`
+    
+    ```bash
+    ~/.cache/openwhispr/parakeet-models/
+    └── sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/
+        ├── model.onnx
+        ├── tokens.txt
+        └── encoder.onnx
+    ```
+    
+    **Note**: Parakeet models are extracted directories, not single files
+  </Tab>
+  
+  <Tab title="Local LLM Models">
+    **Path**: `~/.cache/openwhispr/llama-models/`
+    
+    ```bash
+    ~/.cache/openwhispr/llama-models/
+    ├── Qwen3-8B-Q4_K_M.gguf
+    ├── Llama-3.2-3B-Instruct-Q4_K_M.gguf
+    └── Mistral-7B-Instruct-v0.3-Q4_K_M.gguf
+    ```
+    
+    **Cleanup**: Managed via `modelDelete()` and `modelDeleteAll()` IPC calls
+  </Tab>
+</Tabs>
+
+## Download Mechanism
+
+### Whisper Download Flow
+
+```javascript
+// src/helpers/whisper.js
+class WhisperManager {
+  async downloadModel(modelName, onProgress) {
+    const model = whisperModels[modelName];
+    const modelPath = path.join(this.modelDir, model.fileName);
+    
+    // Check if already downloaded
+    if (fs.existsSync(modelPath)) {
+      const size = fs.statSync(modelPath).size;
+      if (size === model.expectedSizeBytes) {
+        return { success: true, path: modelPath };
+      }
+    }
+    
+    // Download with retry
+    const response = await fetch(model.downloadUrl);
+    const total = parseInt(response.headers.get('content-length'));
+    
+    const fileStream = fs.createWriteStream(modelPath);
+    const reader = response.body.getReader();
+    let downloaded = 0;
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      fileStream.write(value);
+      downloaded += value.length;
+      
+      // Notify renderer
+      onProgress({
+        downloaded,
+        total,
+        percent: (downloaded / total) * 100
+      });
+    }
+    
+    fileStream.close();
+    return { success: true, path: modelPath };
+  }
+}
+```
+
+<Warning>
+**Download validation** is critical. Always verify `expectedSizeBytes` matches the actual file size to prevent corrupted models.
+</Warning>
+
+### Local LLM Download Flow
+
+```javascript
+// src/helpers/modelManagerBridge.js
+class ModelManager {
+  async download(modelId, onProgress) {
+    const { provider, model } = this.findModel(modelId);
+    const url = `${provider.baseUrl}/${model.hfRepo}/resolve/main/${model.fileName}`;
+    const destPath = path.join(this.modelDir, model.fileName);
+    
+    // Use custom download utility with resume support
+    await downloadWithResume(url, destPath, {
+      expectedSize: model.sizeBytes,
+      onProgress: (downloaded, total) => {
+        onProgress({ modelId, downloaded, total });
+      },
+      onError: (error) => {
+        fs.unlinkSync(destPath); // Cleanup partial download
+        throw error;
+      }
+    });
+  }
+}
+```
+
+## Model Status Checking
+
+**File**: `src/helpers/whisper.js`
+
+```javascript
+checkModelStatus(modelName) {
+  const model = whisperModels[modelName];
+  const modelPath = path.join(this.modelDir, model.fileName);
+  
+  if (!fs.existsSync(modelPath)) {
+    return { downloaded: false, size: 0 };
+  }
+  
+  const actualSize = fs.statSync(modelPath).size;
+  const isValid = actualSize === model.expectedSizeBytes;
+  
+  return {
+    downloaded: true,
+    size: actualSize,
+    valid: isValid,
+    path: modelPath
+  };
+}
+```
+
+## Registry Helper Class
+
+**File**: `src/models/ModelRegistry.ts`
+
+```typescript
+import modelData from './modelRegistryData.json';
+
+export class ModelRegistry {
+  static getWhisperModels() {
+    return modelData.whisperModels;
+  }
+  
+  static getParakeetModels() {
+    return modelData.parakeetModels;
+  }
+  
+  static getLocalProviders() {
+    return modelData.localProviders;
+  }
+  
+  static getCloudProviders() {
+    return modelData.cloudProviders;
+  }
+  
+  static findLocalModel(modelId: string) {
+    for (const provider of modelData.localProviders) {
+      const model = provider.models.find(m => m.id === modelId);
+      if (model) return { provider, model };
+    }
+    return null;
+  }
+  
+  static getPromptTemplate(providerId: string) {
+    const provider = modelData.localProviders.find(p => p.id === providerId);
+    return provider?.promptTemplate || '';
+  }
+}
+```
+
+## Internationalization
+
+Model descriptions support i18n via `descriptionKey`:
+
+```json
+// modelRegistryData.json
+"base": {
+  "descriptionKey": "models.descriptions.whisper.base"
+}
+```
+
+```json
+// src/locales/en/translation.json
+{
+  "models": {
+    "descriptions": {
+      "whisper": {
+        "base": "Good balance"
+      }
+    }
+  }
+}
+```
+
+```typescript
+// Component usage
+import { useTranslation } from 'react-i18next';
+
+const { t } = useTranslation();
+const description = model.descriptionKey 
+  ? t(model.descriptionKey) 
+  : model.description;
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Use exact sizes">
+    Always specify `expectedSizeBytes` to detect corrupted downloads
+  </Step>
+  
+  <Step title="Test downloads">
+    Verify URLs are accessible and file sizes match before committing
+  </Step>
+  
+  <Step title="Document quantization">
+    Explain trade-offs (Q4 vs Q5 vs Q8) in model descriptions
+  </Step>
+  
+  <Step title="Mark recommendations">
+    Set `recommended: true` for the best balance of quality/size
+  </Step>
+  
+  <Step title="Keep templates accurate">
+    Wrong prompt templates cause poor model performance
+  </Step>
+</Steps>
+
+## Debugging Model Issues
+
+<Accordion title="Download fails or corrupted">
+  ```bash
+  # Check if model exists
+  ls -lh ~/.cache/openwhispr/whisper-models/
+  
+  # Compare actual size to expectedSizeBytes
+  stat -f%z ~/.cache/openwhispr/whisper-models/ggml-base.bin
+  
+  # Delete and re-download
+  rm ~/.cache/openwhispr/whisper-models/ggml-base.bin
+  ```
+</Accordion>
+
+<Accordion title="Model not appearing in UI">
+  1. Check `modelRegistryData.json` syntax (valid JSON)
+  2. Rebuild React app: `cd src && vite build`
+  3. Restart Electron: `npm run dev`
+  4. Check browser console for errors
+</Accordion>
+
+<Accordion title="Local LLM gives poor results">
+  1. Verify prompt template matches model family
+  2. Check context length isn't exceeded
+  3. Try higher quantization (Q5_K_M vs Q4_K_M)
+  4. Ensure llama-server started successfully
+</Accordion>
+
+## Related Files
+
+- **`src/models/modelRegistryData.json`**: Single source of truth
+- **`src/models/ModelRegistry.ts`**: TypeScript wrapper
+- **`src/helpers/whisper.js`**: Whisper model management
+- **`src/helpers/parakeet.js`**: Parakeet model management
+- **`src/helpers/modelManagerBridge.js`**: Local LLM downloads
+- **`src/config/aiProvidersConfig.ts`**: Derives provider configs from registry
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="sitemap" href="/advanced/architecture">
+    Understand the overall system design
+  </Card>
+  <Card title="Building from Source" icon="hammer" href="/advanced/building-from-source">
+    Compile and package OpenWhispr
+  </Card>
+</CardGroup>

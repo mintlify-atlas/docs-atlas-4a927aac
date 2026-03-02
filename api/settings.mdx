@@ -1,0 +1,455 @@
+---
+title: Settings API
+description: Manage application settings, API keys, hotkeys, and preferences
+---
+
+## API Key Management
+
+### OpenAI
+
+#### window.electronAPI.getOpenAIKey()
+
+Retrieve the stored OpenAI API key.
+
+<ResponseField name="key" type="string | null">
+  The OpenAI API key, or `null` if not set
+</ResponseField>
+
+```javascript
+const apiKey = await window.electronAPI.getOpenAIKey();
+if (!apiKey) {
+  console.log("No OpenAI API key configured");
+}
+```
+
+#### window.electronAPI.saveOpenAIKey()
+
+Save an OpenAI API key to persistent storage.
+
+<ParamField path="key" type="string" required>
+  The OpenAI API key to save
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the key was saved successfully
+</ResponseField>
+
+```javascript
+const result = await window.electronAPI.saveOpenAIKey("sk-...");
+if (result.success) {
+  console.log("API key saved");
+}
+```
+
+### Anthropic
+
+#### window.electronAPI.getAnthropicKey()
+
+Retrieve the stored Anthropic API key.
+
+<ResponseField name="key" type="string | null">
+  The Anthropic API key, or `null` if not set
+</ResponseField>
+
+#### window.electronAPI.saveAnthropicKey()
+
+Save an Anthropic API key.
+
+<ParamField path="key" type="string" required>
+  The Anthropic API key
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the key was saved successfully
+</ResponseField>
+
+### Gemini
+
+#### window.electronAPI.getGeminiKey()
+
+Retrieve the stored Google Gemini API key.
+
+#### window.electronAPI.saveGeminiKey()
+
+Save a Gemini API key.
+
+### Groq
+
+#### window.electronAPI.getGroqKey()
+
+Retrieve the stored Groq API key.
+
+#### window.electronAPI.saveGroqKey()
+
+Save a Groq API key.
+
+### Mistral
+
+#### window.electronAPI.getMistralKey()
+
+Retrieve the stored Mistral API key.
+
+#### window.electronAPI.saveMistralKey()
+
+Save a Mistral API key.
+
+---
+
+## Hotkey Management
+
+### window.electronAPI.updateHotkey()
+
+Update the global hotkey used to activate dictation.
+
+<ParamField path="hotkey" type="string" required>
+  Hotkey string in Electron accelerator format (e.g., `"Alt+R"`, `"CommandOrControl+Shift+Space"`)
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the hotkey was registered successfully
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message if registration failed
+</ResponseField>
+
+#### Example
+
+<CodeGroup>
+
+```javascript Update Hotkey
+const result = await window.electronAPI.updateHotkey("Alt+R");
+
+if (result.success) {
+  console.log("Hotkey updated");
+} else {
+  console.error("Failed to register hotkey:", result.error);
+}
+```
+
+```javascript Platform-Specific
+// Use CommandOrControl for cross-platform modifier keys
+const hotkey = process.platform === "darwin" ? "Option+R" : "Alt+R";
+await window.electronAPI.updateHotkey(hotkey);
+```
+
+</CodeGroup>
+
+<Note>
+  **GNOME Wayland**: On GNOME + Wayland, hotkeys are registered using native GNOME shortcuts (gsettings). The backtick key is not supported; use `Alt+R` instead.
+</Note>
+
+### window.electronAPI.setHotkeyListeningMode()
+
+Enable or disable hotkey capture mode (for recording custom hotkeys in the UI).
+
+<ParamField path="enabled" type="boolean" required>
+  Whether to enable hotkey capture mode
+</ParamField>
+
+<ParamField path="newHotkey" type="string">
+  The new hotkey (when exiting capture mode)
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the mode was changed successfully
+</ResponseField>
+
+#### Example
+
+```javascript
+// Enter capture mode (temporarily unregister current hotkey)
+await window.electronAPI.setHotkeyListeningMode(true);
+
+// User presses keys... capture in UI...
+
+// Exit capture mode and register new hotkey
+await window.electronAPI.setHotkeyListeningMode(false, "Alt+Space");
+```
+
+### window.electronAPI.getHotkeyModeInfo()
+
+Get information about the hotkey system in use.
+
+<ResponseField name="isUsingGnome" type="boolean">
+  Whether GNOME native shortcuts are being used (GNOME + Wayland)
+</ResponseField>
+
+```javascript
+const { isUsingGnome } = await window.electronAPI.getHotkeyModeInfo();
+
+if (isUsingGnome) {
+  console.log("Using GNOME shortcuts (activation mode selector hidden)");
+}
+```
+
+---
+
+## Activation Mode
+
+### window.electronAPI.getActivationMode()
+
+Get the current dictation activation mode.
+
+<ResponseField name="mode" type="string">
+  Activation mode: `"tap"` (toggle on/off) or `"push"` (hold-to-record)
+</ResponseField>
+
+```javascript
+const mode = await window.electronAPI.getActivationMode();
+console.log("Activation mode:", mode); // "tap" or "push"
+```
+
+### window.electronAPI.saveActivationMode()
+
+Save the dictation activation mode.
+
+<ParamField path="mode" type="string" required>
+  Activation mode: `"tap"` or `"push"`
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the mode was saved successfully
+</ResponseField>
+
+```javascript
+await window.electronAPI.saveActivationMode("push");
+```
+
+<Note>
+  **Push-to-Talk on Windows**: Requires the `windows-key-listener.exe` native binary. Falls back to tap mode if unavailable.
+  
+  **GNOME Wayland**: Push-to-talk is not supported (only tap mode available).
+</Note>
+
+---
+
+## Dictation Key
+
+### window.electronAPI.getDictationKey()
+
+Get the current dictation activation key (file-based persistence for startup).
+
+<ResponseField name="key" type="string">
+  The dictation hotkey string
+</ResponseField>
+
+### window.electronAPI.saveDictationKey()
+
+Save the dictation activation key to persistent storage.
+
+<ParamField path="key" type="string" required>
+  The hotkey string to save
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the key was saved successfully
+</ResponseField>
+
+---
+
+## System Settings
+
+### window.electronAPI.openMicrophoneSettings()
+
+Open the system microphone privacy settings.
+
+<ResponseField name="success" type="boolean">
+  Whether the settings were opened successfully
+</ResponseField>
+
+#### Platform-Specific Behavior
+
+- **macOS**: Opens System Preferences → Privacy → Microphone
+- **Windows**: Opens Settings → Privacy → Microphone
+- **Linux**: No standard URL scheme (user must open manually)
+
+```javascript
+await window.electronAPI.openMicrophoneSettings();
+```
+
+### window.electronAPI.openAccessibilitySettings()
+
+Open the system accessibility settings (macOS only, required for clipboard auto-paste).
+
+```javascript
+if (process.platform === "darwin") {
+  await window.electronAPI.openAccessibilitySettings();
+}
+```
+
+### window.electronAPI.requestMicrophoneAccess()
+
+Request microphone permission from the system.
+
+<ResponseField name="granted" type="boolean">
+  Whether permission was granted
+</ResponseField>
+
+```javascript
+const { granted } = await window.electronAPI.requestMicrophoneAccess();
+
+if (!granted) {
+  console.log("Microphone permission denied");
+}
+```
+
+---
+
+## UI Language
+
+### window.electronAPI.getUiLanguage()
+
+Get the current UI language.
+
+<ResponseField name="language" type="string">
+  Language code (e.g., `"en"`, `"es"`, `"fr"`)
+</ResponseField>
+
+### window.electronAPI.saveUiLanguage()
+
+Save the UI language preference.
+
+<ParamField path="language" type="string" required>
+  Language code (e.g., `"en"`, `"es"`, `"fr"`)
+</ParamField>
+
+<ResponseField name="language" type="string">
+  The saved language code
+</ResponseField>
+
+### window.electronAPI.setUiLanguage()
+
+Set the UI language and reload the UI.
+
+<ParamField path="language" type="string" required>
+  Language code
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the language was changed successfully
+</ResponseField>
+
+<ResponseField name="language" type="string">
+  The new language code
+</ResponseField>
+
+#### Example
+
+```javascript
+const result = await window.electronAPI.setUiLanguage("es");
+
+if (result.success) {
+  console.log("Language changed to:", result.language);
+  // UI will refresh automatically
+}
+```
+
+---
+
+## Auto-Start
+
+### window.electronAPI.getAutoStartEnabled()
+
+Check if the app is set to start automatically on login.
+
+<ResponseField name="enabled" type="boolean">
+  Whether auto-start is enabled
+</ResponseField>
+
+```javascript
+const enabled = await window.electronAPI.getAutoStartEnabled();
+console.log("Auto-start:", enabled ? "enabled" : "disabled");
+```
+
+### window.electronAPI.setAutoStartEnabled()
+
+Enable or disable auto-start on login.
+
+<ParamField path="enabled" type="boolean" required>
+  Whether to enable auto-start
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the setting was changed successfully
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message if failed
+</ResponseField>
+
+```javascript
+const result = await window.electronAPI.setAutoStartEnabled(true);
+
+if (result.success) {
+  console.log("Auto-start enabled");
+}
+```
+
+<Note>
+  The app starts minimized to tray when auto-start is enabled.
+</Note>
+
+---
+
+## Startup Preferences Sync
+
+### window.electronAPI.syncStartupPreferences()
+
+Sync startup preferences (used for pre-warming models on app launch).
+
+<ParamField path="prefs" type="object" required>
+  <Expandable title="prefs">
+    <ParamField path="useLocalWhisper" type="boolean">
+      Whether to use local transcription
+    </ParamField>
+    
+    <ParamField path="localTranscriptionProvider" type="string">
+      Provider: `"whisper"` or `"nvidia"`
+    </ParamField>
+    
+    <ParamField path="model" type="string">
+      Model name to pre-warm
+    </ParamField>
+    
+    <ParamField path="reasoningProvider" type="string">
+      Reasoning provider: `"local"`, `"openai"`, `"anthropic"`, etc.
+    </ParamField>
+    
+    <ParamField path="reasoningModel" type="string">
+      Reasoning model to pre-warm (if local)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+#### Example
+
+```javascript
+await window.electronAPI.syncStartupPreferences({
+  useLocalWhisper: true,
+  localTranscriptionProvider: "nvidia",
+  model: "parakeet-tdt-0.6b-v3",
+  reasoningProvider: "local",
+  reasoningModel: "qwen-2.5-3b"
+});
+```
+
+<Note>
+  This method updates environment variables and persists them to `.env` for the next app launch.
+</Note>
+
+---
+
+## Environment Persistence
+
+### window.electronAPI.saveAllKeysToEnv()
+
+Save all API keys and settings to the `.env` file.
+
+<ResponseField name="success" type="boolean">
+  Whether the keys were saved successfully
+</ResponseField>
+
+```javascript
+await window.electronAPI.saveAllKeysToEnv();
+```

@@ -1,0 +1,633 @@
+---
+title: Database API
+description: Manage transcription history, notes, custom dictionary, and folders
+---
+
+## Database Schema
+
+OpenWhispr uses **better-sqlite3** for local data storage. The database is located in the app's user data directory:
+
+- **macOS**: `~/Library/Application Support/OpenWhispr/transcriptions.db`
+- **Windows**: `%APPDATA%\OpenWhispr\transcriptions.db`
+- **Linux**: `~/.config/OpenWhispr/transcriptions.db`
+
+### Tables
+
+#### transcriptions
+
+Stores transcription history.
+
+```sql
+CREATE TABLE transcriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  text TEXT NOT NULL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### custom_dictionary
+
+Stores custom vocabulary words for improved transcription accuracy.
+
+```sql
+CREATE TABLE custom_dictionary (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  word TEXT NOT NULL UNIQUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### notes
+
+Stores notes with optional AI enhancement.
+
+```sql
+CREATE TABLE notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL DEFAULT 'Untitled Note',
+  content TEXT NOT NULL DEFAULT '',
+  note_type TEXT NOT NULL DEFAULT 'personal',
+  source_file TEXT,
+  audio_duration_seconds REAL,
+  enhanced_content TEXT,
+  enhancement_prompt TEXT,
+  enhanced_at_content_hash TEXT,
+  folder_id INTEGER REFERENCES folders(id),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### folders
+
+Stores note organization folders.
+
+```sql
+CREATE TABLE folders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  is_default INTEGER NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## Transcription History
+
+### window.electronAPI.saveTranscription()
+
+Save a transcription to the database.
+
+<ParamField path="text" type="string" required>
+  The transcribed text to save
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the transcription was saved successfully
+</ResponseField>
+
+<ResponseField name="id" type="number">
+  The ID of the newly created transcription record
+</ResponseField>
+
+<ResponseField name="transcription" type="object">
+  The full transcription record (id, text, timestamp, created_at)
+</ResponseField>
+
+#### Example
+
+```javascript
+const result = await window.electronAPI.saveTranscription("Hello world");
+
+if (result.success) {
+  console.log("Saved transcription ID:", result.id);
+  console.log("Timestamp:", result.transcription.timestamp);
+}
+```
+
+### window.electronAPI.getTranscriptions()
+
+Retrieve transcription history.
+
+<ParamField path="limit" type="number" default="50">
+  Maximum number of transcriptions to retrieve
+</ParamField>
+
+<ResponseField name="transcriptions" type="array">
+  Array of transcription objects, ordered by most recent first
+</ResponseField>
+
+#### Example
+
+```javascript
+const history = await window.electronAPI.getTranscriptions(100);
+
+history.forEach(t => {
+  console.log(`[${t.timestamp}] ${t.text}`);
+});
+```
+
+### window.electronAPI.deleteTranscription()
+
+Delete a specific transcription.
+
+<ParamField path="id" type="number" required>
+  The ID of the transcription to delete
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the transcription was deleted successfully
+</ResponseField>
+
+<ResponseField name="id" type="number">
+  The ID of the deleted transcription
+</ResponseField>
+
+```javascript
+await window.electronAPI.deleteTranscription(123);
+```
+
+### window.electronAPI.clearTranscriptions()
+
+Delete all transcriptions.
+
+<ResponseField name="success" type="boolean">
+  Whether all transcriptions were cleared
+</ResponseField>
+
+<ResponseField name="cleared" type="number">
+  Number of transcriptions deleted
+</ResponseField>
+
+```javascript
+const result = await window.electronAPI.clearTranscriptions();
+console.log(`Deleted ${result.cleared} transcriptions`);
+```
+
+---
+
+## Custom Dictionary
+
+### window.electronAPI.getDictionary()
+
+Get all custom dictionary words.
+
+<ResponseField name="words" type="array">
+  Array of custom vocabulary words (strings)
+</ResponseField>
+
+```javascript
+const words = await window.electronAPI.getDictionary();
+console.log("Custom words:", words);
+// ["OpenWhispr", "API", "IPC", "Parakeet"]
+```
+
+### window.electronAPI.setDictionary()
+
+Replace the entire custom dictionary.
+
+<ParamField path="words" type="array" required>
+  Array of words to save (strings)
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the dictionary was updated successfully
+</ResponseField>
+
+#### Example
+
+<CodeGroup>
+
+```javascript Replace Dictionary
+const customWords = ["OpenWhispr", "Anthropic", "Claude", "GPT-5"];
+
+const result = await window.electronAPI.setDictionary(customWords);
+
+if (result.success) {
+  console.log("Dictionary updated");
+}
+```
+
+```javascript Add to Existing Dictionary
+const current = await window.electronAPI.getDictionary();
+const updated = [...current, "NewWord"];
+
+await window.electronAPI.setDictionary(updated);
+```
+
+</CodeGroup>
+
+<Note>
+  Custom dictionary words are passed as the `initialPrompt` parameter to Whisper, improving recognition of uncommon words, names, and technical terms.
+</Note>
+
+### window.electronAPI.undoLearnedCorrections()
+
+Remove auto-learned corrections from the dictionary.
+
+<ParamField path="words" type="array" required>
+  Array of words to remove (strings)
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the words were removed successfully
+</ResponseField>
+
+```javascript
+// Remove auto-learned words
+await window.electronAPI.undoLearnedCorrections(["misheardword"]);
+```
+
+---
+
+## Notes
+
+### window.electronAPI.saveNote()
+
+Create a new note.
+
+<ParamField path="title" type="string" required>
+  Note title
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  Note content (Markdown supported)
+</ParamField>
+
+<ParamField path="noteType" type="string" default="personal">
+  Note type: `"personal"`, `"meeting"`, `"transcription"`
+</ParamField>
+
+<ParamField path="sourceFile" type="string">
+  Path to source audio file (if transcribed from file)
+</ParamField>
+
+<ParamField path="audioDuration" type="number">
+  Duration of audio in seconds
+</ParamField>
+
+<ParamField path="folderId" type="number">
+  ID of the folder to save the note in
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the note was saved successfully
+</ResponseField>
+
+<ResponseField name="note" type="object">
+  The full note record
+</ResponseField>
+
+#### Example
+
+```javascript
+const result = await window.electronAPI.saveNote(
+  "Meeting Notes",
+  "Discussed Q1 roadmap and feature priorities.",
+  "meeting",
+  null,
+  null,
+  2 // folder ID
+);
+
+if (result.success) {
+  console.log("Note ID:", result.note.id);
+}
+```
+
+### window.electronAPI.getNote()
+
+Get a specific note by ID.
+
+<ParamField path="id" type="number" required>
+  Note ID
+</ParamField>
+
+<ResponseField name="note" type="object | null">
+  Note object, or `null` if not found
+</ResponseField>
+
+```javascript
+const note = await window.electronAPI.getNote(5);
+
+if (note) {
+  console.log("Title:", note.title);
+  console.log("Content:", note.content);
+}
+```
+
+### window.electronAPI.getNotes()
+
+Get notes filtered by type and/or folder.
+
+<ParamField path="noteType" type="string">
+  Filter by note type (optional)
+</ParamField>
+
+<ParamField path="limit" type="number" default="100">
+  Maximum number of notes to retrieve
+</ParamField>
+
+<ParamField path="folderId" type="number">
+  Filter by folder ID (optional)
+</ParamField>
+
+<ResponseField name="notes" type="array">
+  Array of note objects, ordered by most recently updated
+</ResponseField>
+
+#### Example
+
+```javascript
+// Get all notes in folder 2
+const folderNotes = await window.electronAPI.getNotes(null, 100, 2);
+
+// Get meeting notes only
+const meetingNotes = await window.electronAPI.getNotes("meeting", 50);
+
+// Get all notes
+const allNotes = await window.electronAPI.getNotes(null, 100);
+```
+
+### window.electronAPI.updateNote()
+
+Update an existing note.
+
+<ParamField path="id" type="number" required>
+  Note ID
+</ParamField>
+
+<ParamField path="updates" type="object" required>
+  <Expandable title="updates">
+    <ParamField path="title" type="string">
+      New title
+    </ParamField>
+    
+    <ParamField path="content" type="string">
+      New content
+    </ParamField>
+    
+    <ParamField path="enhanced_content" type="string">
+      AI-enhanced version of content
+    </ParamField>
+    
+    <ParamField path="enhancement_prompt" type="string">
+      Prompt used for AI enhancement
+    </ParamField>
+    
+    <ParamField path="folder_id" type="number">
+      Move to a different folder
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the note was updated successfully
+</ResponseField>
+
+<ResponseField name="note" type="object">
+  The updated note record
+</ResponseField>
+
+#### Example
+
+```javascript
+const result = await window.electronAPI.updateNote(5, {
+  title: "Updated Meeting Notes",
+  content: "Revised content...",
+  folder_id: 3
+});
+
+if (result.success) {
+  console.log("Note updated:", result.note.updated_at);
+}
+```
+
+### window.electronAPI.deleteNote()
+
+Delete a note.
+
+<ParamField path="id" type="number" required>
+  Note ID
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the note was deleted successfully
+</ResponseField>
+
+```javascript
+await window.electronAPI.deleteNote(5);
+```
+
+### window.electronAPI.exportNote()
+
+Export a note to a file.
+
+<ParamField path="noteId" type="number" required>
+  Note ID
+</ParamField>
+
+<ParamField path="format" type="string" required>
+  Export format: `"md"` (Markdown) or `"txt"` (plain text)
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the note was exported successfully
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message if failed
+</ResponseField>
+
+```javascript
+const result = await window.electronAPI.exportNote(5, "md");
+
+if (result.success) {
+  console.log("Note exported");
+}
+```
+
+---
+
+## Folders
+
+### window.electronAPI.getFolders()
+
+Get all folders.
+
+<ResponseField name="folders" type="array">
+  Array of folder objects, ordered by sort_order
+</ResponseField>
+
+```javascript
+const folders = await window.electronAPI.getFolders();
+
+folders.forEach(f => {
+  console.log(`${f.name} (${f.is_default ? 'default' : 'custom'})`);
+});
+```
+
+### window.electronAPI.createFolder()
+
+Create a new folder.
+
+<ParamField path="name" type="string" required>
+  Folder name (must be unique)
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the folder was created successfully
+</ResponseField>
+
+<ResponseField name="folder" type="object">
+  The newly created folder record
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message if failed (e.g., "A folder with that name already exists")
+</ResponseField>
+
+```javascript
+const result = await window.electronAPI.createFolder("Projects");
+
+if (result.success) {
+  console.log("Folder ID:", result.folder.id);
+}
+```
+
+### window.electronAPI.deleteFolder()
+
+Delete a folder (notes are moved to the default "Personal" folder).
+
+<ParamField path="id" type="number" required>
+  Folder ID
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the folder was deleted successfully
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message if failed (e.g., "Cannot delete default folders")
+</ResponseField>
+
+```javascript
+await window.electronAPI.deleteFolder(3);
+```
+
+### window.electronAPI.renameFolder()
+
+Rename a folder.
+
+<ParamField path="id" type="number" required>
+  Folder ID
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  New folder name (must be unique)
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether the folder was renamed successfully
+</ResponseField>
+
+<ResponseField name="folder" type="object">
+  The updated folder record
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message if failed
+</ResponseField>
+
+```javascript
+const result = await window.electronAPI.renameFolder(3, "Work Projects");
+
+if (result.success) {
+  console.log("Folder renamed:", result.folder.name);
+}
+```
+
+### window.electronAPI.getFolderNoteCounts()
+
+Get note counts for each folder.
+
+<ResponseField name="counts" type="array">
+  Array of objects with `folder_id` and `count` properties
+</ResponseField>
+
+```javascript
+const counts = await window.electronAPI.getFolderNoteCounts();
+
+counts.forEach(c => {
+  console.log(`Folder ${c.folder_id}: ${c.count} notes`);
+});
+```
+
+---
+
+## Real-Time Events
+
+Listen for database changes in real-time:
+
+### window.electronAPI.onTranscriptionAdded()
+
+```javascript
+const cleanup = window.electronAPI.onTranscriptionAdded((transcription) => {
+  console.log("New transcription:", transcription);
+  // Update UI
+});
+
+// Clean up when component unmounts
+cleanup();
+```
+
+### window.electronAPI.onTranscriptionDeleted()
+
+```javascript
+window.electronAPI.onTranscriptionDeleted(({ id }) => {
+  console.log("Transcription deleted:", id);
+});
+```
+
+### window.electronAPI.onTranscriptionsCleared()
+
+```javascript
+window.electronAPI.onTranscriptionsCleared(({ cleared }) => {
+  console.log(`${cleared} transcriptions cleared`);
+});
+```
+
+### window.electronAPI.onNoteAdded()
+
+```javascript
+window.electronAPI.onNoteAdded((note) => {
+  console.log("New note:", note.title);
+});
+```
+
+### window.electronAPI.onNoteUpdated()
+
+```javascript
+window.electronAPI.onNoteUpdated((note) => {
+  console.log("Note updated:", note.id);
+});
+```
+
+### window.electronAPI.onNoteDeleted()
+
+```javascript
+window.electronAPI.onNoteDeleted(({ id }) => {
+  console.log("Note deleted:", id);
+});
+```
+
+### window.electronAPI.onDictionaryUpdated()
+
+```javascript
+window.electronAPI.onDictionaryUpdated((words) => {
+  console.log("Dictionary updated:", words);
+});
+```

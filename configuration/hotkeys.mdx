@@ -1,0 +1,309 @@
+---
+title: Global Hotkeys
+description: Configure keyboard shortcuts to control OpenWhispr from anywhere on your system
+---
+
+## Overview
+
+OpenWhispr uses global hotkeys to trigger voice dictation from any application. You can customize your hotkey to use single keys, compound combinations, or platform-specific options.
+
+<Info>
+  The hotkey system automatically handles platform differences and provides intelligent fallbacks when your preferred key is unavailable.
+</Info>
+
+## Default Hotkeys by Platform
+
+<Tabs>
+  <Tab title="macOS">
+    **Default:** Globe (Fn) key
+    
+    The Globe key (also labeled Fn on some keyboards) provides a hardware-level trigger similar to the system dictation feature.
+    
+    <Note>
+      Globe key support requires Xcode Command Line Tools to compile the native Swift listener. Install with `xcode-select --install`.
+    </Note>
+  </Tab>
+  
+  <Tab title="Windows">
+    **Default:** `Control+Super` (Ctrl+Win)
+    
+    Windows supports both tap-to-talk and push-to-talk modes using a native low-level keyboard hook.
+    
+    <Tip>
+      Push-to-talk on Windows requires the `windows-key-listener.exe` binary, which is automatically downloaded during installation.
+    </Tip>
+  </Tab>
+  
+  <Tab title="Linux">
+    **Default:** `Control+Super` (Ctrl+Meta)
+    
+    <Warning>
+      On GNOME Wayland, global shortcuts use the native GNOME keyboard shortcut system instead of Electron's API. Push-to-talk is **not available** on GNOME Wayland.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Configuring Your Hotkey
+
+<Steps>
+  <Step title="Open Settings">
+    Right-click the system tray icon and select **Control Panel**, then navigate to **Settings** → **Hotkeys**.
+  </Step>
+  
+  <Step title="Click the Hotkey Input Field">
+    The field will show your current hotkey (e.g., "Globe" or "Ctrl+Super").
+  </Step>
+  
+  <Step title="Press Your Desired Key Combination">
+    Press any key or combination of modifier keys (Ctrl, Shift, Alt, Command, Super) plus a regular key.
+    
+    Examples:
+    - `F8`
+    - `Control+Alt+D`
+    - `Command+Shift+Space`
+    - `RightCommand` (macOS only)
+  </Step>
+  
+  <Step title="Confirm the Change">
+    If the hotkey is available, OpenWhispr will register it and save it to your settings.
+    
+    If the hotkey is already in use, you'll see suggestions for alternatives.
+  </Step>
+</Steps>
+
+## Compound Hotkey Support
+
+OpenWhispr supports multi-key combinations for maximum flexibility:
+
+### Modifier Keys
+- `Control` / `Ctrl`
+- `Alt` / `Option`
+- `Shift`
+- `Command` / `Cmd` (macOS)
+- `Super` / `Meta` / `Win` (Windows/Linux)
+- `CommandOrControl` (cross-platform: Cmd on macOS, Ctrl elsewhere)
+
+### Special Keys
+- Function keys: `F1` through `F12`
+- Special hardware keys: `Pause`, `ScrollLock`
+- Right-side modifiers: `RightCommand`, `RightControl`, `RightAlt`, `RightShift`
+
+### Examples
+```
+Control+Super           # Ctrl+Win on Windows, Ctrl+Meta on Linux
+Command+Shift+Space     # macOS compound hotkey
+Alt+F7                  # Alt + function key
+RightCommand            # Right Command key only (macOS)
+```
+
+<Note>
+  Modifier-only combinations (e.g., `Control+Super`) use native keyboard hooks on Windows for better reliability.
+</Note>
+
+## Platform-Specific Features
+
+### macOS: Globe/Fn Key
+
+The Globe key (Fn key on MacBook keyboards) provides a native hardware trigger:
+
+- **How it works:** A Swift binary listener detects Globe key presses using macOS APIs
+- **Requirements:** Xcode Command Line Tools (`xcode-select --install`)
+- **Activation:** Select "GLOBE" or "Fn" from the hotkey picker
+
+<Tip>
+  The Globe key is ideal because it's rarely used by other applications and provides a dedicated hardware button for dictation.
+</Tip>
+
+### Windows: Push-to-Talk Support
+
+Windows users can enable true push-to-talk using a native keyboard hook:
+
+- **Binary:** `windows-key-listener.exe` (automatically downloaded)
+- **How it works:** Uses Windows `SetWindowsHookEx` API for low-level keyboard monitoring
+- **Compound support:** Works with combinations like `Ctrl+Shift+F11`
+- **Activation modes:** Both tap-to-talk and push-to-talk supported
+
+**Activation Mode Setting:**
+1. Go to **Settings** → **Hotkeys**
+2. Select **Push-to-Talk** or **Tap-to-Talk**
+3. Push-to-talk records while you hold the key; tap-to-talk toggles recording on/off
+
+### Linux: GNOME Wayland Special Handling
+
+<Warning>
+  GNOME Wayland uses a different hotkey system than other Linux environments.
+</Warning>
+
+**How GNOME Wayland Hotkeys Work:**
+
+<Steps>
+  <Step title="D-Bus Service Registration">
+    OpenWhispr creates a D-Bus service at `com.openwhispr.App` that listens for hotkey events.
+  </Step>
+  
+  <Step title="gsettings Integration">
+    Hotkeys are registered as custom GNOME shortcuts using `gsettings` at path:
+    
+    ```
+    /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/openwhispr/
+    ```
+  </Step>
+  
+  <Step title="System Settings Visibility">
+    Your hotkey appears in GNOME Settings → Keyboard → Shortcuts → Custom Shortcuts.
+  </Step>
+</Steps>
+
+**Limitations:**
+- **No push-to-talk:** GNOME shortcuts only fire a single toggle event (no key-up detection)
+- **Different key format:** Uses GNOME keysym format (e.g., `<Alt>r` instead of `Alt+R`)
+- **Backtick not supported:** The default backtick key doesn't work; use `Alt+R` instead
+
+**Automatic Fallback:**
+
+If GNOME integration fails, OpenWhispr falls back to X11/XWayland global shortcuts.
+
+## Troubleshooting Hotkey Conflicts
+
+### Hotkey Already Registered
+
+If your chosen hotkey is already in use:
+
+<Accordion title="View Suggested Alternatives">
+  OpenWhispr automatically suggests alternative hotkeys based on your platform:
+  
+  **Single keys:**
+  - `F8`, `F9`, `F10`
+  - `Pause`, `ScrollLock`
+  
+  **Compound keys:**
+  - macOS: `Control+Alt`, `Alt+Command`, `Command+Shift+Space`
+  - Windows: `Control+Super`, `Control+Alt`, `Control+Shift+K`
+  - Linux: `Control+Super`, `Control+Shift+K`, `Super+Shift+R`
+</Accordion>
+
+### OS Reserved Shortcuts
+
+Some key combinations are reserved by the operating system:
+
+<Tabs>
+  <Tab title="macOS">
+    Avoid system shortcuts like:
+    - `Command+Tab` (app switcher)
+    - `Command+Space` (Spotlight)
+    - `Command+Q` (quit)
+  </Tab>
+  
+  <Tab title="Windows">
+    Avoid:
+    - `Alt+Tab` (task switcher)
+    - `Win+L` (lock screen)
+    - `Ctrl+Alt+Delete`
+  </Tab>
+  
+  <Tab title="Linux">
+    Linux desktop environments often reserve `Super` key combinations:
+    - `Super+A` (activities)
+    - `Super+S` (workspace switcher)
+    - Check your DE's keyboard settings
+  </Tab>
+</Tabs>
+
+### GNOME Wayland Conflicts
+
+Check for conflicts in GNOME Settings:
+
+<Steps>
+  <Step title="Open GNOME Settings">
+    Navigate to **Settings** → **Keyboard** → **Keyboard Shortcuts**.
+  </Step>
+  
+  <Step title="Look for OpenWhispr Entry">
+    Scroll to **Custom Shortcuts** and find the OpenWhispr entry.
+  </Step>
+  
+  <Step title="Check for Conflicts">
+    If your hotkey conflicts with a system shortcut, GNOME will show a warning.
+  </Step>
+  
+  <Step title="Choose a Different Key">
+    Recommended: `Alt+R`, `Control+Shift+K`, or `Super+Shift+R`.
+  </Step>
+</Steps>
+
+## Hotkey Not Working?
+
+<Accordion title="Check Application Permissions">
+  Some platforms require special permissions for global hotkeys:
+  
+  **macOS:**
+  - No special permissions needed for hotkeys
+  - Accessibility permission only required for auto-paste feature
+  
+  **Windows:**
+  - No permissions needed
+  - Ensure `windows-key-listener.exe` is present in the app directory
+  
+  **Linux:**
+  - X11: No permissions needed
+  - GNOME Wayland: Hotkey registered via gsettings (check GNOME Settings)
+  - Other Wayland: May not support global shortcuts
+</Accordion>
+
+<Accordion title="Verify Hotkey Registration">
+  Check the console logs to see if your hotkey registered successfully:
+  
+  1. Look for messages like:
+     ```
+     [HotkeyManager] Hotkey "Control+Super" registered successfully
+     ```
+  
+  2. If registration failed, look for:
+     ```
+     [HotkeyManager] Registration failed: already_registered
+     ```
+  
+  3. Try a different hotkey from the suggestions
+</Accordion>
+
+<Accordion title="Restart the Application">
+  Sometimes hotkey registration requires a restart:
+  
+  1. Quit OpenWhispr completely (right-click tray icon → Quit)
+  2. Relaunch the application
+  3. Test your hotkey
+</Accordion>
+
+## Environment Variable Configuration
+
+Advanced users can set the hotkey via the `.env` file:
+
+```bash
+# ~/.config/OpenWhispr/.env (Linux)
+# ~/Library/Application Support/OpenWhispr/.env (macOS)
+# %APPDATA%\OpenWhispr\.env (Windows)
+
+DICTATION_KEY=Control+Super
+ACTIVATION_MODE=tap  # or "push" for push-to-talk
+```
+
+<Note>
+  Changes to the `.env` file require an application restart to take effect.
+</Note>
+
+## Best Practices
+
+<Tip>
+  Choose a hotkey that:
+  - Doesn't conflict with your frequently-used applications
+  - Is easy to press quickly while typing
+  - Uses a dedicated key (like F8 or Globe) if possible
+  - Isn't already reserved by your operating system
+</Tip>
+
+**Recommended Hotkeys:**
+
+- **macOS:** `GLOBE` (best), `Control+Alt`, `F8`
+- **Windows:** `Control+Super` (default), `F8`, `Control+Shift+K`
+- **Linux X11:** `Control+Super`, `F8`, `Alt+F7`
+- **GNOME Wayland:** `Alt+R`, `Control+Shift+K`, `Super+Shift+R`

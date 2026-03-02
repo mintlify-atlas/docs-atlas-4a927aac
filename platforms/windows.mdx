@@ -1,0 +1,450 @@
+---
+title: Windows Installation & Setup
+description: Complete guide for installing and configuring OpenWhispr on Windows 10 and later
+---
+
+## System Requirements
+
+<Info>
+  OpenWhispr requires **Windows 10** or later (Windows 11 supported).
+</Info>
+
+### Hardware Requirements
+- **Processor**: x64 (64-bit)
+- **RAM**: 4GB minimum (8GB recommended for local transcription)
+- **Disk Space**: 500MB for app + up to 3GB for local Whisper models
+
+### Software Requirements
+- **Node.js 18+** (for building from source)
+- **Visual Studio Build Tools** or **MinGW-w64** (for compiling native binaries from source)
+
+## Installation Methods
+
+<Tabs>
+  <Tab title="NSIS Installer (Recommended)">
+    <Steps>
+      <Step title="Download the installer">
+        Download the `.exe` installer from [GitHub Releases](https://github.com/OpenWhispr/openwhispr/releases/latest)
+      </Step>
+
+      <Step title="Run the installer">
+        1. Double-click the installer
+        2. Choose installation directory (default: `C:\Program Files\OpenWhispr`)
+        3. Select shortcuts options:
+           - Create desktop shortcut
+           - Create Start Menu shortcut
+        4. Click **Install**
+      </Step>
+
+      <Step title="Launch OpenWhispr">
+        Open from Start Menu or desktop shortcut.
+      </Step>
+    </Steps>
+
+    <Note>
+      The NSIS installer automatically cleans up cached models on uninstall.
+    </Note>
+  </Tab>
+
+  <Tab title="Portable Version">
+    <Steps>
+      <Step title="Download the portable archive">
+        Download the `.zip` file from [GitHub Releases](https://github.com/OpenWhispr/openwhispr/releases/latest)
+      </Step>
+
+      <Step title="Extract and run">
+        1. Extract the `.zip` to any folder (e.g., `C:\OpenWhispr`)
+        2. Run `OpenWhispr.exe`
+      </Step>
+    </Steps>
+
+    <Tip>
+      Portable version stores data in the app folder - perfect for USB drives.
+    </Tip>
+  </Tab>
+
+  <Tab title="Build from Source">
+    <Steps>
+      <Step title="Clone the repository">
+        ```bash
+        git clone https://github.com/OpenWhispr/openwhispr.git
+        cd openwhispr
+        ```
+      </Step>
+
+      <Step title="Install dependencies">
+        ```bash
+        npm install
+        ```
+      </Step>
+
+      <Step title="Build unsigned (for personal use)">
+        ```bash
+        npm run pack
+        ```
+        
+        The app will be in `dist\win-unpacked\OpenWhispr.exe`.
+      </Step>
+
+      <Step title="Optional: Build NSIS installer">
+        ```bash
+        npm run build:win
+        ```
+        
+        <Note>
+          Requires code signing certificate for production releases.
+        </Note>
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Required Permissions
+
+### Microphone Access
+
+OpenWhispr needs microphone access for voice recording.
+
+<Steps>
+  <Step title="Grant permission when prompted">
+    Windows will automatically prompt for microphone access on first use.
+  </Step>
+
+  <Step title="Manual configuration">
+    If you need to change permissions:
+    1. Open **Settings** → **Privacy** → **Microphone**
+    2. Enable **Allow apps to access your microphone**
+    3. Scroll down and enable OpenWhispr
+    4. Restart the app
+  </Step>
+</Steps>
+
+<Tip>
+  The app provides a button to open microphone privacy settings: `ms-settings:privacy-microphone`
+</Tip>
+
+### No Accessibility Permissions Required
+
+<Info>
+  Unlike macOS, Windows does **not** require special accessibility permissions for automatic pasting. OpenWhispr uses native Win32 APIs.
+</Info>
+
+## Windows-Specific Features
+
+### Native Push-to-Talk with Compound Hotkeys
+
+<Info>
+  OpenWhispr includes a native **low-level keyboard hook** (`windows-key-listener.exe`) for true push-to-talk support.
+</Info>
+
+**Key features:**
+- **Low-level keyboard hook**: Uses `SetWindowsHookEx` with `WH_KEYBOARD_LL`
+- **Compound hotkey support**: Multi-key combinations like `Ctrl+Shift+F11`, `Control+Super`, `Alt+Space`
+- **Key-up detection**: Enables true push-to-talk mode (hold to record, release to stop)
+- **Global hook**: Works even when OpenWhispr is in the background
+
+**How it works:**
+1. Native C binary spawned as background process
+2. Monitors keyboard events at system level
+3. Emits `KEY_DOWN` and `KEY_UP` events to Node.js via stdout
+4. Supports modifiers: `Ctrl`, `Alt`, `Shift`, `Win` (Super)
+
+<CodeGroup>
+```c C (windows-key-listener.c)
+// Low-level keyboard hook for compound hotkey detection
+LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
+    KBDLLHOOKSTRUCT* kbd = (KBDLLHOOKSTRUCT*)lParam;
+    
+    if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
+        // Check if all required modifiers are pressed
+        if (AreModifiersPressed() && kbd->vkCode == targetVk) {
+            printf("KEY_DOWN\\n");
+            fflush(stdout);
+        }
+    }
+    else if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) {
+        if (kbd->vkCode == targetVk) {
+            printf("KEY_UP\\n");
+            fflush(stdout);
+        }
+    }
+    
+    return CallNextHookEx(NULL, nCode, wParam, lParam);
+}
+```
+
+```javascript JavaScript (windowsKeyManager.js)
+const proc = spawn(binaryPath, [hotkey]);
+
+proc.stdout.on('data', (data) => {
+  const lines = data.toString().split('\\n');
+  lines.forEach(line => {
+    if (line === 'KEY_DOWN') {
+      this.emit('key-down');
+    } else if (line === 'KEY_UP') {
+      this.emit('key-up');
+    }
+  });
+});
+```
+</CodeGroup>
+
+**Supported modifiers:**
+- `Control` / `Ctrl` / `CommandOrControl` → `VK_CONTROL`
+- `Alt` / `Option` → `VK_MENU`
+- `Shift` → `VK_SHIFT`
+- `Super` / `Win` / `Meta` → `VK_LWIN` / `VK_RWIN`
+
+**Example hotkeys:**
+- `Control+Super` (default on Windows)
+- `Ctrl+Shift+K`
+- `Alt+Space`
+- `Win+F11`
+
+### Windows Fast Paste Binary
+
+<Info>
+  OpenWhispr uses a native C binary (`windows-fast-paste.exe`) for **instant clipboard pasting** with terminal detection.
+</Info>
+
+**How it works:**
+- **Win32 SendInput API**: Simulates keyboard input at driver level
+- **Terminal detection**: Automatically uses `Ctrl+Shift+V` for terminal emulators
+- **Window class detection**: Identifies foreground window type
+- **Executable name fallback**: Detects Electron-based terminals
+
+**Terminal detection:**
+1. **Window class names**: `ConsoleWindowClass`, `CASCADIA_HOSTING_WINDOW_CLASS`, `mintty`, `PuTTY`, `Alacritty`, etc.
+2. **Executable names**: `termius.exe`, `tabby.exe`, `wave.exe`, `rio.exe`
+
+<CodeGroup>
+```c Terminal Detection (windows-fast-paste.c)
+static const char* TERMINAL_CLASSES[] = {
+    "ConsoleWindowClass",
+    "CASCADIA_HOSTING_WINDOW_CLASS",  // Windows Terminal
+    "mintty",                          // Git Bash
+    "PuTTY",
+    "Alacritty",
+    "org.wezfurlong.wezterm",
+    "Hyper",
+    "kitty",
+    NULL
+};
+
+static const char* TERMINAL_EXES[] = {
+    "termius.exe",  // Electron-based terminals
+    "tabby.exe",
+    "wave.exe",
+    NULL
+};
+```
+
+```c Paste Simulation (windows-fast-paste.c)
+INPUT inputs[4];
+ZeroMemory(inputs, sizeof(inputs));
+
+// Press Ctrl
+inputs[0].type = INPUT_KEYBOARD;
+inputs[0].ki.wVk = VK_CONTROL;
+
+// Press V (or Shift+V for terminals)
+inputs[1].type = INPUT_KEYBOARD;
+inputs[1].ki.wVk = isTerminal ? VK_SHIFT : 'V';
+
+// Release keys
+inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
+inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
+
+SendInput(4, inputs, sizeof(INPUT));
+```
+</CodeGroup>
+
+**Supported terminals:**
+- Windows Terminal (all shells: PowerShell, CMD, WSL)
+- Git Bash (mintty)
+- PuTTY
+- Alacritty
+- WezTerm
+- Hyper
+- kitty
+- Termius
+- Tabby
+- Wave
+
+**Fallback methods:**
+1. `windows-fast-paste.exe` (primary, ~10ms delay)
+2. `nircmd.exe` (bundled tool, ~30ms delay)
+3. PowerShell `SendKeys` (last resort, ~40ms delay)
+
+### Clipboard Restore Behavior
+
+OpenWhispr temporarily replaces your clipboard to paste text, then **automatically restores** the original clipboard:
+- **Fast paste**: 10ms delay before paste, 80ms before restore
+- **nircmd**: 30ms delay before paste, 80ms before restore
+- **PowerShell**: 40ms delay before paste, 80ms before restore
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Push-to-talk mode not working">
+    **Cause**: Native key listener binary not found or failed to start.
+
+    **Solution**:
+    1. Check that `windows-key-listener.exe` exists in `resources\bin\`
+    2. Try a different hotkey (some keys may not support key-up detection)
+    3. Switch to **tap-to-talk mode** in Settings
+
+    **Manual download** (if missing):
+    ```bash
+    npm run download:windows-key-listener
+    ```
+  </Accordion>
+
+  <Accordion title="Text not pasting in certain apps">
+    **Cause**: Some apps block simulated input or require administrator privileges.
+
+    **Solutions**:
+    1. Try running OpenWhispr as administrator
+    2. Use manual paste with `Ctrl+V` (text is always copied to clipboard)
+    3. Check if the target app is blocking input events
+
+    **Known issues**:
+    - Some full-screen games block input
+    - Apps running as admin may require OpenWhispr to also run as admin
+  </Accordion>
+
+  <Accordion title="Microphone not detected">
+    **Solution**:
+    1. Open **Settings** → **System** → **Sound** → **Input**
+    2. Select the correct microphone
+    3. Test the microphone using "Test your microphone"
+    4. Restart OpenWhispr
+
+    The app provides a button: `ms-settings:sound`
+  </Accordion>
+
+  <Accordion title="Terminal paste uses Ctrl+V instead of Ctrl+Shift+V">
+    **Cause**: Terminal not detected by window class or executable name.
+
+    **Solution**: Report the terminal name in GitHub Issues so we can add it to the detection list.
+
+    **Workaround**: Manually paste with `Ctrl+Shift+V`.
+  </Accordion>
+
+  <Accordion title="Hotkey conflicts with other apps">
+    **Solution**: Change the hotkey in **Settings → Hotkeys**.
+
+    **Suggested alternatives**:
+    - `Control+Super` (default)
+    - `Ctrl+Shift+K`
+    - `Alt+F7`
+    - `F8` or `F9`
+  </Accordion>
+
+  <Accordion title="Local Whisper models not downloading">
+    **Check disk space**: Whisper models range from 75MB (tiny) to 3GB (large).
+
+    **Models location**: `%USERPROFILE%\.cache\openwhispr\whisper-models`
+
+    **Manual cleanup**:
+    ```powershell
+    Remove-Item -Recurse -Force "$env:USERPROFILE\.cache\openwhispr\whisper-models"
+    ```
+
+    Or use in-app cleanup: **Settings → General → Remove Downloaded Models**
+  </Accordion>
+
+  <Accordion title="App won't start after Windows update">
+    **Cause**: Windows Defender or antivirus blocking the app.
+
+    **Solution**:
+    1. Add OpenWhispr to Windows Defender exclusions:
+       - Open **Windows Security** → **Virus & threat protection**
+       - Click **Manage settings** → **Add or remove exclusions**
+       - Add `C:\Program Files\OpenWhispr`
+    2. Reinstall the app
+  </Accordion>
+</AccordionGroup>
+
+## Performance Optimization
+
+### Local Transcription Performance
+
+<Tip>
+  **Recommended model**: `base` - Best balance of speed and accuracy (~142MB)
+</Tip>
+
+**Model comparison**:
+- `tiny`: ~75MB, fastest, lowest quality
+- `base`: ~142MB, recommended balance ⭐
+- `small`: ~466MB, better quality
+- `medium`: ~1.5GB, high quality
+- `large`: ~3GB, best quality
+- `turbo`: ~1.6GB, fast with good quality
+
+### GPU Acceleration
+
+OpenWhispr uses CPU-only builds of whisper.cpp. For GPU acceleration:
+1. Build whisper.cpp with CUDA support
+2. Replace the bundled binary in `resources/bin/`
+3. Ensure NVIDIA drivers are up to date
+
+## Uninstallation
+
+<Tabs>
+  <Tab title="NSIS Installer">
+    <Steps>
+      <Step title="Uninstall via Control Panel">
+        1. Open **Settings** → **Apps** → **Installed apps**
+        2. Find OpenWhispr in the list
+        3. Click **Uninstall**
+      </Step>
+
+      <Step title="Automatic cleanup">
+        The NSIS uninstaller automatically removes:
+        - App files from `C:\Program Files\OpenWhispr`
+        - Cached Whisper models from `%USERPROFILE%\.cache\openwhispr\whisper-models`
+        - Start Menu shortcuts
+        - Desktop shortcuts
+      </Step>
+
+      <Step title="Manual cleanup (optional)">
+        Remove app data:
+        ```powershell
+        Remove-Item -Recurse -Force "$env:APPDATA\OpenWhispr"
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="Portable Version">
+    <Steps>
+      <Step title="Delete the folder">
+        Simply delete the folder where you extracted OpenWhispr.
+      </Step>
+
+      <Step title="Remove cached models (if stored separately)">
+        ```powershell
+        Remove-Item -Recurse -Force "$env:USERPROFILE\.cache\openwhispr"
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configure Settings" icon="gear" href="/configuration/api-keys">
+    Set up API keys, choose models, and customize hotkeys
+  </Card>
+  <Card title="Choose Processing Method" icon="brain" href="/features/transcription-modes">
+    Compare local vs cloud transcription options
+  </Card>
+  <Card title="Troubleshooting Guide" icon="wrench" href="/advanced/troubleshooting">
+    Solutions for common Windows issues
+  </Card>
+  <Card title="Keyboard Shortcuts" icon="keyboard" href="/configuration/hotkeys">
+    Master hotkeys and push-to-talk mode
+  </Card>
+</CardGroup>

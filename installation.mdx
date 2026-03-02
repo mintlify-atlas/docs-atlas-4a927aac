@@ -1,0 +1,771 @@
+---
+title: Installation Guide
+description: Download and install OpenWhispr on macOS, Windows, and Linux with platform-specific instructions
+---
+
+# Installation Guide
+
+OpenWhispr supports macOS, Windows, and Linux. Choose your platform below for detailed installation instructions.
+
+<Note>
+**System Requirements:**
+- **macOS**: 10.15 (Catalina) or later, Apple Silicon or Intel
+- **Windows**: Windows 10 or later, 64-bit
+- **Linux**: Modern distro with glibc 2.31+ (Ubuntu 20.04+, Fedora 32+, etc.)
+- **RAM**: 4GB minimum, 8GB recommended for larger models
+- **Disk Space**: 500MB for app + 75MB to 3GB for local models
+</Note>
+
+## Download OpenWhispr
+
+Get the latest release from GitHub:
+
+<Card title="Download Latest Release" icon="download" href="https://github.com/OpenWhispr/openwhispr/releases/latest">
+  Visit the GitHub Releases page to download installers for all platforms
+</Card>
+
+**Current Version**: 1.5.5 (actively maintained)
+
+## Platform Installation
+
+<Tabs>
+  <Tab title="macOS">
+    ### macOS Installation
+    
+    <Steps>
+      <Step title="Choose your architecture">
+        Download the appropriate DMG for your Mac:
+        
+        - **Apple Silicon** (M1, M2, M3, M4): `OpenWhispr-{version}-mac-arm64.dmg`
+        - **Intel**: `OpenWhispr-{version}-mac-x64.dmg`
+        
+        <Tip>
+        Not sure? Click Apple menu → About This Mac. If you see "Apple M1" or similar, you have Apple Silicon.
+        </Tip>
+      </Step>
+      
+      <Step title="Install the application">
+        1. Open the downloaded `.dmg` file
+        2. Drag **OpenWhispr.app** to your **Applications** folder
+        3. Eject the DMG from Finder
+      </Step>
+      
+      <Step title="First launch (unsigned app)">
+        Since OpenWhispr is not notarized by Apple, you'll need to bypass Gatekeeper:
+        
+        1. **Right-click** (or Control-click) on OpenWhispr.app in Applications
+        2. Select **Open** from the context menu
+        3. Click **Open** in the security dialog
+        
+        <Warning>
+        Do NOT double-click to open the first time. This will show an error. You must right-click → Open to bypass the security warning.
+        </Warning>
+      </Step>
+      
+      <Step title="Grant microphone permission">
+        When you first start dictation, macOS will prompt for microphone access:
+        
+        1. Click **OK** to allow microphone access
+        2. If you accidentally denied it, go to **System Settings → Privacy & Security → Microphone**
+        3. Enable the checkbox for OpenWhispr
+      </Step>
+      
+      <Step title="Grant accessibility permission (optional but recommended)">
+        For automatic text pasting, OpenWhispr needs accessibility permission:
+        
+        1. Go to **System Settings → Privacy & Security → Accessibility**
+        2. Click the **+** button (you may need to unlock with your password)
+        3. Navigate to Applications and select OpenWhispr
+        4. Enable the checkbox for OpenWhispr
+        
+        <Info>
+        Without accessibility permission, transcribed text copies to clipboard. You'll need to paste manually with Cmd+V.
+        </Info>
+      </Step>
+    </Steps>
+    
+    ### macOS-Specific Features
+    
+    - **Globe Key Support**: Optional Fn/Globe key listener for hardware-level dictation trigger
+    - **Native AppleScript**: Reliable text pasting via AppleScript `keystroke`
+    - **Menu Bar Integration**: Clean menu bar icon with quick access to Control Panel
+    - **System Settings Links**: One-click access to microphone and accessibility settings
+    
+    ### Troubleshooting macOS Installation
+    
+    <AccordionGroup>
+      <Accordion title="App is damaged and can't be opened">
+        This happens when trying to double-click on first launch. Solution:
+        
+        1. Move OpenWhispr.app to Trash
+        2. Re-download and reinstall from DMG
+        3. **Right-click → Open** (not double-click) on first launch
+      </Accordion>
+      
+      <Accordion title="Accessibility permission not working">
+        If text still doesn't paste after granting accessibility:
+        
+        1. Remove OpenWhispr from System Settings → Privacy → Accessibility
+        2. Quit OpenWhispr completely (Cmd+Q)
+        3. Re-add OpenWhispr to accessibility list
+        4. Restart the app
+      </Accordion>
+      
+      <Accordion title="Globe key not working">
+        Globe key requires Xcode Command Line Tools:
+        
+        ```bash
+        # Install Xcode Command Line Tools
+        xcode-select --install
+        ```
+        
+        After installation, restart OpenWhispr.
+      </Accordion>
+    </AccordionGroup>
+  </Tab>
+  
+  <Tab title="Windows">
+    ### Windows Installation
+    
+    <Steps>
+      <Step title="Download the installer">
+        Get the NSIS installer:
+        
+        - `OpenWhispr-Setup-{version}.exe` (64-bit Windows 10+)
+      </Step>
+      
+      <Step title="Run the installer">
+        1. Double-click `OpenWhispr-Setup-{version}.exe`
+        2. If SmartScreen appears, click **More info** → **Run anyway**
+        3. Follow the installation wizard
+        4. Choose installation directory (default: `C:\Program Files\OpenWhispr`)
+        5. Click **Install**
+      </Step>
+      
+      <Step title="Launch OpenWhispr">
+        After installation:
+        
+        - Launch from **Start Menu** → OpenWhispr
+        - Or use the **Desktop shortcut** (if created during install)
+        - System tray icon appears in bottom-right corner
+      </Step>
+      
+      <Step title="Grant microphone permission">
+        Windows will prompt for microphone access on first use:
+        
+        1. Click **Allow** when prompted
+        2. If denied accidentally: **Settings → Privacy → Microphone** → Enable for OpenWhispr
+        
+        <Tip>
+        You can also open microphone settings directly from OpenWhispr's Control Panel.
+        </Tip>
+      </Step>
+    </Steps>
+    
+    ### Windows-Specific Features
+    
+    - **Push-to-Talk**: Native low-level keyboard hooks enable true push-to-talk mode
+    - **Compound Hotkeys**: Full support for multi-key combinations (Ctrl+Shift+F11, etc.)
+    - **Terminal Detection**: Automatically uses Ctrl+Shift+V in terminals (Windows Terminal, PowerShell, Git Bash, etc.)
+    - **Native Paste**: Fast SendInput API for instant text pasting
+    - **NSIS Installer**: Professional installer with uninstall support
+    - **Auto-cleanup**: Uninstaller removes cached models from `%USERPROFILE%\.cache\openwhispr`
+    
+    ### Alternative Installation Methods
+    
+    <CodeGroup>
+    ```powershell Portable Version
+    # Download portable ZIP (no installer)
+    # Extract to any folder
+    # Run OpenWhispr.exe directly
+    # Portable version saves settings in app directory
+    ```
+    
+    ```powershell Scoop Package Manager
+    # Community package (not officially maintained)
+    scoop bucket add extras
+    scoop install openwhispr
+    ```
+    </CodeGroup>
+    
+    ### Troubleshooting Windows Installation
+    
+    <AccordionGroup>
+      <Accordion title="SmartScreen blocks installation">
+        Windows SmartScreen may warn about unrecognized app:
+        
+        1. Click **More info** in the SmartScreen dialog
+        2. Click **Run anyway** button that appears
+        3. Installation proceeds normally
+        
+        <Info>
+        This happens because OpenWhispr is not code-signed. The app is safe to run.
+        </Info>
+      </Accordion>
+      
+      <Accordion title="Push-to-talk not working">
+        Push-to-talk requires the native key listener binary:
+        
+        1. Check if `windows-key-listener.exe` exists in app installation folder
+        2. If missing, the app falls back to tap-to-toggle mode
+        3. Reinstall OpenWhispr to get the binary
+        
+        <Warning>
+        Some antivirus software may flag the key listener binary. This is a false positive.
+        </Warning>
+      </Accordion>
+      
+      <Accordion title="Text doesn't paste in specific apps">
+        If pasting fails in certain applications:
+        
+        1. Text is always copied to clipboard as fallback
+        2. Use Ctrl+V to paste manually
+        3. Try running the target app as administrator
+        4. Check if the app blocks automated input for security
+      </Accordion>
+    </AccordionGroup>
+  </Tab>
+  
+  <Tab title="Linux">
+    ### Linux Installation
+    
+    OpenWhispr supports multiple Linux package formats for maximum compatibility:
+    
+    <Tabs>
+      <Tab title="AppImage (Universal)">
+        **Best for**: Any distro, no root required, portable
+        
+        <Steps>
+          <Step title="Download AppImage">
+            Get the AppImage file:
+            - `OpenWhispr-{version}-linux-x64.AppImage`
+          </Step>
+          
+          <Step title="Make executable and run">
+            ```bash
+            # Make executable
+            chmod +x OpenWhispr-*.AppImage
+            
+            # Run directly
+            ./OpenWhispr-*.AppImage
+            ```
+          </Step>
+          
+          <Step title="Optional: Integrate with desktop">
+            ```bash
+            # Install AppImageLauncher for desktop integration
+            # Ubuntu/Debian
+            sudo apt install appimagelauncher
+            
+            # Fedora
+            sudo dnf install appimagelauncher
+            
+            # Run AppImage again to integrate
+            ./OpenWhispr-*.AppImage
+            ```
+          </Step>
+        </Steps>
+      </Tab>
+      
+      <Tab title="Debian/Ubuntu (.deb)">
+        **Best for**: Debian, Ubuntu, Linux Mint, Pop!_OS, elementary OS
+        
+        ```bash
+        # Download .deb package
+        # OpenWhispr-{version}-linux-x64.deb
+        
+        # Install with apt
+        sudo apt install ./OpenWhispr-*-linux-x64.deb
+        
+        # Launch from terminal
+        openwhispr
+        
+        # Or find in applications menu
+        ```
+        
+        **Uninstall:**
+        ```bash
+        sudo apt remove openwhispr
+        ```
+      </Tab>
+      
+      <Tab title="Fedora/RHEL (.rpm)">
+        **Best for**: Fedora, Red Hat, CentOS, openSUSE, Rocky Linux
+        
+        ```bash
+        # Download .rpm package
+        # OpenWhispr-{version}-linux-x64.rpm
+        
+        # Install with dnf
+        sudo dnf install ./OpenWhispr-*-linux-x64.rpm
+        
+        # Launch from terminal
+        openwhispr
+        
+        # Or find in applications menu
+        ```
+        
+        **Uninstall:**
+        ```bash
+        sudo dnf remove openwhispr
+        ```
+      </Tab>
+      
+      <Tab title="Universal Archive (.tar.gz)">
+        **Best for**: Any distro, custom installations, server environments
+        
+        ```bash
+        # Download archive
+        # OpenWhispr-{version}-linux-x64.tar.gz
+        
+        # Extract
+        tar -xzf OpenWhispr-*-linux-x64.tar.gz
+        cd OpenWhispr-*/
+        
+        # Run directly (no installation)
+        ./openwhispr
+        
+        # Optional: Create symlink for system-wide access
+        sudo ln -s "$(pwd)/openwhispr" /usr/local/bin/openwhispr
+        ```
+      </Tab>
+      
+      <Tab title="Flatpak (Sandboxed)">
+        **Best for**: Security-focused users, any distro with Flatpak
+        
+        <Info>
+        Flatpak version includes sandboxing with explicit permissions for microphone, clipboard, and file access.
+        </Info>
+        
+        ```bash
+        # Install Flatpak runtime (if not already installed)
+        flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+        
+        # Install OpenWhispr Flatpak
+        flatpak install --user ./OpenWhispr-*-linux-x64.flatpak
+        
+        # Run from applications menu or terminal
+        flatpak run com.herotools.OpenWhispr
+        ```
+      </Tab>
+    </Tabs>
+    
+    ### Post-Installation: Install Paste Tools
+    
+    For automatic text pasting, install one of these tools:
+    
+    <Tabs>
+      <Tab title="X11 (Traditional)">
+        ```bash
+        # Ubuntu/Debian
+        sudo apt install xdotool
+        
+        # Fedora/RHEL
+        sudo dnf install xdotool
+        
+        # Arch
+        sudo pacman -S xdotool
+        ```
+        
+        <Info>
+        OpenWhispr includes a native `linux-fast-paste` binary that uses XTest extension. xdotool is only needed as fallback.
+        </Info>
+      </Tab>
+      
+      <Tab title="Wayland (Modern)">
+        **Option 1: wtype** (recommended, requires virtual keyboard protocol)
+        ```bash
+        # Ubuntu/Debian
+        sudo apt install wtype wl-clipboard
+        
+        # Fedora/RHEL
+        sudo dnf install wtype wl-clipboard
+        
+        # Arch
+        sudo pacman -S wtype wl-clipboard
+        ```
+        
+        **Option 2: ydotool** (works on more compositors, requires daemon)
+        ```bash
+        # Ubuntu/Debian
+        sudo apt install ydotool
+        sudo systemctl enable --now ydotoold
+        
+        # Fedora/RHEL
+        sudo dnf install ydotool
+        sudo systemctl enable --now ydotoold
+        
+        # Arch
+        sudo pacman -S ydotool
+        sudo systemctl enable --now ydotoold
+        ```
+        
+        <Warning>
+        ydotool requires the `ydotoold` daemon to be running. Enable it with systemd as shown above.
+        </Warning>
+      </Tab>
+      
+      <Tab title="GNOME Wayland">
+        GNOME Wayland has special requirements:
+        
+        ```bash
+        # Install clipboard tool
+        sudo apt install wl-clipboard  # Ubuntu/Debian
+        sudo dnf install wl-clipboard  # Fedora
+        
+        # For terminal detection on KDE (optional)
+        sudo apt install kdotool  # Ubuntu/Debian
+        sudo dnf install kdotool  # Fedora
+        ```
+        
+        <Info>
+        OpenWhispr uses native GNOME shortcuts via D-Bus on GNOME Wayland. No additional tools needed for hotkey support.
+        </Info>
+      </Tab>
+    </Tabs>
+    
+    ### Linux-Specific Features
+    
+    - **Native Paste Binary**: Uses XTest (X11) or uinput (Wayland) for fast pasting
+    - **GNOME Wayland Integration**: Native D-Bus shortcuts via `gsettings`
+    - **Terminal Detection**: Auto-detects 20+ terminal emulators and uses Ctrl+Shift+V
+    - **Multiple Package Formats**: AppImage, deb, rpm, tar.gz, Flatpak
+    - **XDG Standards**: Follows XDG Base Directory specification
+    - **Auto-cleanup**: Package managers remove cached models on uninstall
+    
+    ### System Requirements (Linux)
+    
+    <CodeGroup>
+    ```bash Check glibc version
+    ldd --version
+    # Requires glibc 2.31 or later
+    ```
+    
+    ```bash Check Wayland session
+    echo $XDG_SESSION_TYPE
+    # Returns: wayland or x11
+    ```
+    
+    ```bash Verify GNOME version (if using GNOME)
+    gnome-shell --version
+    # GNOME Wayland shortcuts require GNOME 40+
+    ```
+    </CodeGroup>
+    
+    ### Troubleshooting Linux Installation
+    
+    <AccordionGroup>
+      <Accordion title="AppImage won't run: No such file or directory">
+        This error indicates missing FUSE:
+        
+        ```bash
+        # Ubuntu/Debian
+        sudo apt install libfuse2
+        
+        # Fedora 32+
+        sudo dnf install fuse-libs
+        
+        # Arch
+        sudo pacman -S fuse2
+        ```
+      </Accordion>
+      
+      <Accordion title="Global hotkey doesn't work on GNOME Wayland">
+        OpenWhispr uses native GNOME shortcuts via D-Bus:
+        
+        1. Check **Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts**
+        2. Look for "OpenWhispr Toggle Dictation"
+        3. If missing, restart OpenWhispr
+        4. Check logs: `journalctl --user -u openwhispr` (if installed via package)
+        
+        <Info>
+        Default hotkey on GNOME Wayland is Alt+R (backtick not supported). Push-to-talk is not available.
+        </Info>
+      </Accordion>
+      
+      <Accordion title="Text doesn't paste (Wayland)">
+        Ensure you have a paste tool installed:
+        
+        ```bash
+        # Check which tools are available
+        which wtype ydotool xdotool
+        
+        # Install missing tools (see tabs above)
+        
+        # For ydotool, verify daemon is running
+        systemctl --user status ydotoold
+        ```
+        
+        OpenWhispr tries paste methods in this order:
+        1. Native `linux-fast-paste` binary (uinput or XTest)
+        2. `wtype` (Wayland virtual keyboard)
+        3. `ydotool` (Wayland uinput simulator)
+        4. `xdotool` (X11/XWayland apps)
+        5. Clipboard fallback (manual Ctrl+V)
+      </Accordion>
+      
+      <Accordion title="Permission denied errors">
+        If you get permission errors:
+        
+        ```bash
+        # Check file permissions
+        ls -l OpenWhispr-*.AppImage
+        
+        # Make executable
+        chmod +x OpenWhispr-*.AppImage
+        
+        # For uinput access (native paste binary on Wayland)
+        sudo usermod -aG input $USER
+        # Log out and back in for group membership to take effect
+        ```
+      </Accordion>
+    </AccordionGroup>
+  </Tab>
+</Tabs>
+
+## Post-Installation Setup
+
+After installing, complete the setup process:
+
+<Steps>
+  <Step title="Launch OpenWhispr">
+    Open the application from:
+    - **macOS**: Applications folder or Spotlight
+    - **Windows**: Start Menu or Desktop shortcut
+    - **Linux**: Applications menu or terminal (`openwhispr`)
+  </Step>
+  
+  <Step title="Complete onboarding">
+    Follow the interactive setup wizard:
+    1. Choose authentication (cloud sign-in or skip)
+    2. Select processing method (cloud, BYOK, or local)
+    3. Configure hotkey
+    4. Grant system permissions
+    5. Test first transcription
+    
+    See [Quick Start Guide](/quickstart) for detailed walkthrough.
+  </Step>
+  
+  <Step title="Verify installation">
+    Test that everything works:
+    
+    1. Press your hotkey (default: backtick \`)
+    2. Speak: "This is a test"
+    3. Press hotkey again
+    4. Verify text appears or copies to clipboard
+    
+    <Tip>
+    If the dictation panel appears and records audio, your installation is successful!
+    </Tip>
+  </Step>
+</Steps>
+
+## Building from Source
+
+For developers or users who want to build OpenWhispr from source:
+
+<Steps>
+  <Step title="Prerequisites">
+    Install required dependencies:
+    
+    ```bash
+    # Node.js 18+ and npm
+    # Download from https://nodejs.org
+    
+    # Verify installation
+    node --version  # Should be 18.x or higher
+    npm --version
+    ```
+    
+    **Platform-specific requirements:**
+    
+    <Tabs>
+      <Tab title="macOS">
+        ```bash
+        # Xcode Command Line Tools (for Globe key support)
+        xcode-select --install
+        ```
+      </Tab>
+      
+      <Tab title="Windows">
+        ```powershell
+        # Visual Studio Build Tools or MinGW-w64 (for native binaries)
+        # Download from: https://visualstudio.microsoft.com/downloads/
+        ```
+      </Tab>
+      
+      <Tab title="Linux">
+        ```bash
+        # Build tools and X11 development headers
+        # Ubuntu/Debian
+        sudo apt install build-essential libx11-dev libxtst-dev
+        
+        # Fedora/RHEL
+        sudo dnf install gcc libX11-devel libXtst-devel
+        
+        # Arch
+        sudo pacman -S base-devel libx11 libxtst
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  
+  <Step title="Clone repository">
+    ```bash
+    git clone https://github.com/OpenWhispr/openwhispr.git
+    cd openwhispr
+    ```
+  </Step>
+  
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
+  </Step>
+  
+  <Step title="Download native binaries">
+    ```bash
+    # Download whisper.cpp, llama-server, and sherpa-onnx
+    npm run download:whisper-cpp
+    npm run download:llama-server
+    npm run download:sherpa-onnx
+    ```
+  </Step>
+  
+  <Step title="Build and run">
+    <Tabs>
+      <Tab title="Development">
+        ```bash
+        # Run in development mode with hot reload
+        npm run dev
+        ```
+      </Tab>
+      
+      <Tab title="Production Build">
+        ```bash
+        # Build unsigned package (no code signing)
+        npm run pack
+        
+        # Output:
+        # macOS: dist/mac-arm64/OpenWhispr.app
+        # Windows: dist/win-unpacked/OpenWhispr.exe
+        # Linux: dist/linux-unpacked/openwhispr
+        ```
+      </Tab>
+      
+      <Tab title="Distribution">
+        ```bash
+        # Build signed installer (requires certificates)
+        npm run build:mac    # macOS DMG
+        npm run build:win    # Windows NSIS installer
+        npm run build:linux  # Linux AppImage, deb, rpm
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+## Updating OpenWhispr
+
+<Tabs>
+  <Tab title="macOS">
+    1. Download latest DMG from GitHub releases
+    2. Drag new version to Applications (replace existing)
+    3. Launch updated app
+    
+    <Info>
+    Settings and transcription history are preserved during updates.
+    </Info>
+  </Tab>
+  
+  <Tab title="Windows">
+    1. Run new installer
+    2. Installer automatically updates existing installation
+    3. Launch updated app
+    
+    <Info>
+    Cached models and settings are preserved in `%USERPROFILE%\.cache\openwhispr`.
+    </Info>
+  </Tab>
+  
+  <Tab title="Linux">
+    **AppImage**: Replace old AppImage with new one
+    
+    **Package managers**:
+    ```bash
+    # Debian/Ubuntu
+    sudo apt install ./OpenWhispr-*-new-version.deb
+    
+    # Fedora/RHEL
+    sudo dnf upgrade ./OpenWhispr-*-new-version.rpm
+    ```
+    
+    Settings in `~/.config/OpenWhispr/` and models in `~/.cache/openwhispr/` are preserved.
+  </Tab>
+</Tabs>
+
+## Uninstalling OpenWhispr
+
+<Tabs>
+  <Tab title="macOS">
+    1. Quit OpenWhispr (Cmd+Q)
+    2. Move OpenWhispr.app to Trash from Applications folder
+    3. Remove settings (optional):
+       ```bash
+       rm -rf ~/Library/Application\ Support/OpenWhispr
+       rm -rf ~/.cache/openwhispr
+       ```
+  </Tab>
+  
+  <Tab title="Windows">
+    1. Quit OpenWhispr from system tray
+    2. Settings → Apps → OpenWhispr → Uninstall
+    3. Follow uninstaller wizard
+    
+    <Info>
+    The uninstaller automatically removes cached models from `%USERPROFILE%\.cache\openwhispr`.
+    </Info>
+  </Tab>
+  
+  <Tab title="Linux">
+    **AppImage**: Delete the AppImage file and settings:
+    ```bash
+    rm ~/.local/share/applications/openwhispr.desktop  # If integrated
+    rm -rf ~/.config/OpenWhispr
+    rm -rf ~/.cache/openwhispr
+    ```
+    
+    **Package managers**:
+    ```bash
+    # Debian/Ubuntu
+    sudo apt remove openwhispr
+    
+    # Fedora/RHEL
+    sudo dnf remove openwhispr
+    
+    # Flatpak
+    flatpak uninstall com.herotools.OpenWhispr
+    ```
+    
+    <Info>
+    Package managers automatically clean up cached models during uninstall.
+    </Info>
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Complete setup and create your first transcription
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/configuration/hotkeys">
+    Customize settings, hotkeys, and processing options
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+    Platform-specific issues and solutions
+  </Card>
+  <Card title="Features" icon="sparkles" href="/features/dictation">
+    Explore AI processing, custom dictionary, and more
+  </Card>
+</CardGroup>

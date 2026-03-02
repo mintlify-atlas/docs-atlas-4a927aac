@@ -1,0 +1,382 @@
+---
+title: API Keys Configuration
+description: How to configure API keys for cloud transcription and AI processing providers
+---
+
+## Overview
+
+OpenWhispr supports multiple AI providers for cloud transcription and intelligent text processing. You can configure API keys through the Control Panel or by editing your `.env` file.
+
+<Info>
+  API keys are optional if you're using local transcription with Whisper or Parakeet models. They're only needed for cloud-based features.
+</Info>
+
+## Supported Providers
+
+### Transcription Providers
+
+<Tabs>
+  <Tab title="OpenAI">
+    **Models Available:**
+    - `gpt-4o-mini-transcribe` - Fast and accurate
+    - `gpt-4o-transcribe` - Most accurate
+    - `whisper-1` - Original Whisper model
+    
+    **Pricing:** Pay-per-use via OpenAI API
+    
+    **Best for:** High-quality transcription with excellent accuracy
+  </Tab>
+  
+  <Tab title="Groq">
+    **Models Available:**
+    - `whisper-large-v3` - High accuracy
+    - `whisper-large-v3-turbo` - 216x real-time speed
+    
+    **Pricing:** Free tier available, then pay-per-use
+    
+    **Best for:** Ultra-fast transcription with Groq's LPU inference
+  </Tab>
+  
+  <Tab title="Mistral">
+    **Models Available:**
+    - `voxtral-mini-latest` - Multilingual transcription
+    
+    **Pricing:** Pay-per-use via Mistral API
+    
+    **Best for:** Multilingual transcription needs
+  </Tab>
+</Tabs>
+
+### AI Processing Providers
+
+<Tabs>
+  <Tab title="OpenAI">
+    **Models Available:**
+    - GPT-5.2, GPT-5 Mini, GPT-5 Nano
+    - GPT-4.1, GPT-4.1 Mini, GPT-4.1 Nano
+    
+    **Uses:** Latest Responses API (September 2025)
+    
+    **Best for:** Advanced reasoning and text processing
+  </Tab>
+  
+  <Tab title="Anthropic">
+    **Models Available:**
+    - Claude Opus 4.6 - Most capable
+    - Claude Sonnet 4.6 - Balanced performance
+    - Claude Haiku 4.5 - Fast with near-frontier intelligence
+    
+    **Best for:** Natural, thoughtful text processing
+  </Tab>
+  
+  <Tab title="Google Gemini">
+    **Models Available:**
+    - Gemini 3.1 Pro - Most capable
+    - Gemini 3 Flash - Ultra-fast, high-capability
+    - Gemini 2.5 Flash Lite - Lowest latency and cost
+    
+    **Best for:** Fast reasoning with thinking process support
+  </Tab>
+  
+  <Tab title="Groq">
+    **Models Available:**
+    - Qwen3 32B, GPT-OSS 120B, GPT-OSS 20B
+    - LLaMA 3.3 70B, LLaMA 3.1 8B, LLaMA 4 Scout
+    - Compound, Compound Mini, Kimi K2
+    
+    **Best for:** Ultra-fast inference (up to 1000 tokens/sec)
+  </Tab>
+</Tabs>
+
+## How to Obtain API Keys
+
+<Steps>
+  <Step title="OpenAI API Key">
+    1. Visit [platform.openai.com](https://platform.openai.com)
+    2. Create an account or sign in
+    3. Navigate to **API Keys** in your account settings
+    4. Click **Create new secret key**
+    5. Copy the key (starts with `sk-`)
+    6. Add billing information to your OpenAI account
+    
+    <Warning>
+      Store your API key securely. OpenAI won't show it again after creation.
+    </Warning>
+  </Step>
+  
+  <Step title="Anthropic API Key">
+    1. Visit [console.anthropic.com](https://console.anthropic.com)
+    2. Create an account or sign in
+    3. Go to **API Keys** section
+    4. Click **Create Key**
+    5. Copy the key (starts with `sk-ant-`)
+    6. Set up billing in your account
+  </Step>
+  
+  <Step title="Google Gemini API Key">
+    1. Visit [aistudio.google.com](https://aistudio.google.com)
+    2. Sign in with your Google account
+    3. Click **Get API Key**
+    4. Create a new API key or use an existing one
+    5. Copy the key
+    
+    <Note>
+      Gemini offers a free tier with usage limits before requiring payment.
+    </Note>
+  </Step>
+  
+  <Step title="Groq API Key">
+    1. Visit [console.groq.com](https://console.groq.com)
+    2. Create an account or sign in
+    3. Navigate to **API Keys**
+    4. Click **Create API Key**
+    5. Copy the key (starts with `gsk_`)
+    
+    <Tip>
+      Groq offers a generous free tier for testing and development.
+    </Tip>
+  </Step>
+  
+  <Step title="Mistral API Key">
+    1. Visit [console.mistral.ai](https://console.mistral.ai)
+    2. Create an account or sign in
+    3. Go to **API Keys**
+    4. Generate a new key
+    5. Copy the key
+  </Step>
+</Steps>
+
+## Configuring Keys in the Control Panel
+
+<Steps>
+  <Step title="Open Control Panel Settings">
+    Right-click the OpenWhispr tray icon and select **Control Panel**.
+    
+    Navigate to **Settings** → **Transcription** or **Settings** → **Intelligence** depending on which provider you're configuring.
+  </Step>
+  
+  <Step title="Select Your Provider">
+    Choose the provider you want to use from the dropdown menu.
+  </Step>
+  
+  <Step title="Enter Your API Key">
+    Paste your API key into the input field.
+    
+    <Info>
+      Keys are automatically masked (shown as `sk-...****`) for security.
+    </Info>
+  </Step>
+  
+  <Step title="Save Settings">
+    Click **Save** or the input field will auto-save when you navigate away.
+    
+    OpenWhispr will test the connection and show a success message if the key is valid.
+  </Step>
+</Steps>
+
+## Configuring Keys via Environment File
+
+Advanced users can configure API keys by editing the `.env` file directly:
+
+### Locate Your .env File
+
+<Tabs>
+  <Tab title="macOS">
+    ```bash
+    ~/Library/Application Support/OpenWhispr/.env
+    ```
+  </Tab>
+  
+  <Tab title="Windows">
+    ```bash
+    %APPDATA%\OpenWhispr\.env
+    ```
+  </Tab>
+  
+  <Tab title="Linux">
+    ```bash
+    ~/.config/OpenWhispr/.env
+    ```
+  </Tab>
+</Tabs>
+
+### Edit the File
+
+Add your API keys to the `.env` file:
+
+```bash
+# OpenAI API Configuration
+OPENAI_API_KEY=sk-your-openai-key-here
+
+# Anthropic API Configuration
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-key-here
+
+# Google Gemini API Configuration
+GEMINI_API_KEY=your-gemini-key-here
+
+# Groq API Configuration
+GROQ_API_KEY=gsk_your-groq-key-here
+
+# Mistral API Configuration
+MISTRAL_API_KEY=your-mistral-key-here
+
+# Custom API Endpoints (optional)
+CUSTOM_TRANSCRIPTION_API_KEY=your-custom-key
+CUSTOM_REASONING_API_KEY=your-custom-key
+```
+
+<Warning>
+  After editing the `.env` file, restart OpenWhispr for changes to take effect.
+</Warning>
+
+## API Key Security and Storage
+
+### How Keys Are Stored
+
+<Info>
+  OpenWhispr stores API keys securely using platform-specific methods.
+</Info>
+
+**Storage Method:**
+
+1. **In-Memory:** Keys loaded from `.env` file are stored in `process.env`
+2. **File Persistence:** Keys saved via Control Panel are written to the `.env` file in the user data directory
+3. **No Cloud Sync:** Keys are stored locally and never transmitted except to their respective API providers
+
+**File Location:**
+
+- **macOS:** `~/Library/Application Support/OpenWhispr/.env`
+- **Windows:** `%APPDATA%\OpenWhispr\.env`
+- **Linux:** `~/.config/OpenWhispr/.env`
+
+**File Permissions:**
+
+The `.env` file is created with restrictive permissions to prevent unauthorized access:
+
+- **macOS/Linux:** Read/write for user only (chmod 600)
+- **Windows:** Accessible only to the current user account
+
+### Best Practices
+
+<Steps>
+  <Step title="Use Separate Keys for Testing">
+    Create development and production API keys to avoid mixing usage metrics and costs.
+  </Step>
+  
+  <Step title="Set Usage Limits">
+    Configure spending limits in your provider dashboards:
+    - OpenAI: Set monthly spending caps
+    - Anthropic: Configure usage alerts
+    - Groq: Monitor free tier limits
+  </Step>
+  
+  <Step title="Rotate Keys Periodically">
+    Change your API keys every few months or if you suspect they've been compromised.
+  </Step>
+  
+  <Step title="Never Commit Keys to Git">
+    Add `.env` to your `.gitignore` file:
+    
+    ```bash
+    # .gitignore
+    .env
+    .env.local
+    ```
+  </Step>
+  
+  <Step title="Monitor Usage">
+    Check your provider dashboards regularly for unexpected usage:
+    - OpenAI: [platform.openai.com/usage](https://platform.openai.com/usage)
+    - Anthropic: [console.anthropic.com](https://console.anthropic.com)
+    - Groq: [console.groq.com](https://console.groq.com)
+  </Step>
+</Steps>
+
+## Custom API Endpoints
+
+OpenWhispr supports custom API endpoints for self-hosted or compatible services:
+
+```bash
+# Custom transcription endpoint
+CUSTOM_TRANSCRIPTION_API_KEY=your-key
+CUSTOM_TRANSCRIPTION_BASE_URL=https://your-api.example.com/v1
+
+# Custom reasoning endpoint
+CUSTOM_REASONING_API_KEY=your-key
+CUSTOM_REASONING_BASE_URL=https://your-llm-api.example.com/v1
+```
+
+<Note>
+  Custom endpoints must be compatible with the OpenAI API format.
+</Note>
+
+## Troubleshooting API Key Issues
+
+<Accordion title="Invalid API Key Error">
+  **Symptoms:** Error message saying "Invalid API key" or "Authentication failed"
+  
+  **Solutions:**
+  1. Verify you copied the entire key (no extra spaces)
+  2. Check that the key starts with the correct prefix:
+     - OpenAI: `sk-`
+     - Anthropic: `sk-ant-`
+     - Groq: `gsk_`
+  3. Ensure you created the key in the correct account
+  4. Check if the key has been revoked in your provider dashboard
+  5. Try creating a new API key
+</Accordion>
+
+<Accordion title="Insufficient Credits Error">
+  **Symptoms:** Error about insufficient balance or quota exceeded
+  
+  **Solutions:**
+  1. Check your billing status in the provider dashboard
+  2. Add payment information if required
+  3. Verify your spending limits aren't blocking requests
+  4. For free tiers, check if you've exceeded usage limits
+</Accordion>
+
+<Accordion title="API Key Not Persisting">
+  **Symptoms:** Need to re-enter API key after restarting OpenWhispr
+  
+  **Solutions:**
+  1. Check file permissions on the `.env` file
+  2. Verify the app has write access to the user data directory
+  3. Look for error messages in the console about `.env` file saving
+  4. Try manually editing the `.env` file with correct permissions
+</Accordion>
+
+<Accordion title="Rate Limit Errors">
+  **Symptoms:** "Too many requests" or "Rate limit exceeded" errors
+  
+  **Solutions:**
+  1. Wait a few seconds and try again
+  2. Check your provider's rate limits for your API tier
+  3. Consider upgrading to a higher tier if needed
+  4. For transcription, try switching to local Whisper/Parakeet
+</Accordion>
+
+## Switching Between Local and Cloud
+
+You can switch between local and cloud processing without losing your API keys:
+
+<Steps>
+  <Step title="Go to Settings → Transcription">
+    Open the Control Panel and navigate to the Transcription settings.
+  </Step>
+  
+  <Step title="Choose Processing Mode">
+    Select either:
+    - **OpenWhispr Cloud** (if signed in)
+    - **Bring Your Own Key** (uses your API keys)
+    - **Local Processing** (downloads models to your computer)
+  </Step>
+  
+  <Step title="Test Your Configuration">
+    Try a quick dictation to verify everything works.
+  </Step>
+</Steps>
+
+<Tip>
+  Use local processing for privacy-sensitive work and cloud processing for speed and convenience. Your API keys remain saved when switching between modes.
+</Tip>

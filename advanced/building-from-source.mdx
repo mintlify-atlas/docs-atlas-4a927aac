@@ -1,0 +1,704 @@
+---
+title: "Building from Source"
+description: "Complete guide to compiling, building, and packaging OpenWhispr from source code for all platforms"
+---
+
+This guide covers building OpenWhispr from source for development, testing, and distribution.
+
+## Prerequisites
+
+<Tabs>
+  <Tab title="All Platforms">
+    - **Node.js 18+** and npm ([nodejs.org](https://nodejs.org/))
+    - **Git** for cloning the repository
+    - **Internet connection** for downloading dependencies and binaries
+  </Tab>
+  
+  <Tab title="macOS">
+    - **Xcode Command Line Tools**: `xcode-select --install`
+    - **Apple Developer account** (for code signing and notarization)
+    - **Certificates**: Developer ID Application certificate in Keychain
+    
+    <Info>
+    Without code signing, you can still build for personal use with `npm run pack`.
+    </Info>
+  </Tab>
+  
+  <Tab title="Windows">
+    - **Visual Studio 2019+** or **Build Tools for Visual Studio**
+      - Required for compiling native modules (better-sqlite3)
+    - **Windows SDK** (included with Visual Studio)
+    - **Code signing certificate** (optional, for distribution)
+    
+    <Accordion title="Installing Build Tools">
+      ```powershell
+      # Download from:
+      # https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022
+      
+      # Or use Chocolatey:
+      choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools"
+      ```
+    </Accordion>
+  </Tab>
+  
+  <Tab title="Linux">
+    - **GCC or Clang** compiler
+    - **Build essentials**: `build-essential` (Debian/Ubuntu) or `base-devel` (Arch)
+    - **X11 development headers**: `libx11-dev`, `libxtst-dev`
+    
+    ```bash
+    # Debian/Ubuntu
+    sudo apt install build-essential libx11-dev libxtst-dev
+    
+    # Fedora/RHEL
+    sudo dnf install gcc gcc-c++ libX11-devel libXtst-devel
+    
+    # Arch
+    sudo pacman -S base-devel libx11 libxtst
+    ```
+  </Tab>
+</Tabs>
+
+## Quick Start
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/OpenWhispr/openwhispr.git
+    cd openwhispr
+    ```
+  </Step>
+  
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
+    This installs both main process and renderer dependencies, including:
+    - Electron 36
+    - React 19, Vite, TypeScript
+    - better-sqlite3 (requires native compilation)
+    - ffmpeg-static, dbus-next, and more
+  </Step>
+  
+  <Step title="Compile native helpers">
+    ```bash
+    npm run compile:native
+    ```
+    Compiles platform-specific binaries:
+    - **macOS**: `macos-globe-listener` (Swift), `macos-fast-paste` (C)
+    - **Windows**: `windows-key-listener.exe`, `windows-fast-paste.exe` (C)
+    - **Linux**: `linux-fast-paste` (C)
+  </Step>
+  
+  <Step title="Download runtime binaries">
+    ```bash
+    npm run download:whisper-cpp
+    npm run download:llama-server
+    npm run download:sherpa-onnx
+    ```
+    These are bundled with the app but not in Git (too large).
+  </Step>
+  
+  <Step title="Run in development mode">
+    ```bash
+    npm run dev
+    ```
+    Starts Vite dev server (port 5173) and Electron in development mode with hot reload.
+  </Step>
+</Steps>
+
+<Note>
+Development mode uses `NODE_ENV=development` and loads from `http://localhost:5173`. Changes to React components hot-reload automatically.
+</Note>
+
+## Development Workflow
+
+### File Structure
+
+```
+openwhispr/
+├── main.js                 # Electron main process entry
+├── preload.js              # Context bridge (main ↔ renderer)
+├── package.json            # Main dependencies + scripts
+├── src/                    # React app (Vite project)
+│   ├── App.jsx             # Main dictation UI
+│   ├── main.jsx            # React entry point
+│   ├── index.html          # HTML template
+│   ├── vite.config.js      # Vite configuration
+│   ├── components/         # React components
+│   ├── helpers/            # Main process modules
+│   ├── hooks/              # React hooks
+│   ├── models/             # Model registry
+│   ├── services/           # Business logic
+│   └── dist/               # Vite build output (gitignored)
+├── resources/              # Native source files
+│   ├── bin/                # Compiled binaries (gitignored)
+│   ├── globe-listener.swift
+│   ├── windows-key-listener.c
+│   └── linux-fast-paste.c
+└── scripts/                # Build automation
+    ├── download-whisper-cpp.js
+    ├── build-globe-listener.js
+    └── lib/download-utils.js
+```
+
+### Development Scripts
+
+<CodeGroup>
+
+```bash Development
+# Start dev server + Electron with hot reload
+npm run dev
+
+# Run only Vite dev server (port 5173)
+npm run dev:renderer
+
+# Run only Electron (assumes Vite is running)
+npm run dev:main
+
+# Format code with ESLint + Prettier
+npm run format
+
+# Type-check TypeScript
+npm run typecheck
+```
+
+```bash Building
+# Build React app only (→ src/dist/)
+cd src && vite build
+
+# Build + package (unsigned, for testing)
+npm run pack
+
+# Full production build with signing
+npm run build          # Current platform
+npm run build:mac      # macOS DMG + ZIP
+npm run build:win      # Windows NSIS + Portable
+npm run build:linux    # AppImage + deb + rpm + tar.gz
+```
+
+```bash Utilities
+# Download binaries for current platform
+npm run download:whisper-cpp
+npm run download:llama-server
+npm run download:sherpa-onnx
+
+# Download for all platforms (multi-platform builds)
+npm run download:whisper-cpp:all
+npm run download:llama-server:all
+npm run download:sherpa-onnx:all
+
+# Re-compile native helpers
+npm run compile:native
+
+# Clean build artifacts
+npm run clean
+```
+
+</CodeGroup>
+
+## Native Module Compilation
+
+### macOS Globe Key Listener
+
+**Source**: `resources/globe-listener.swift`
+
+**Build script**: `scripts/build-globe-listener.js`
+
+```bash
+# Compile Swift to native binary
+swiftc \
+  -O \
+  -o resources/bin/macos-globe-listener \
+  resources/globe-listener.swift \
+  -framework ApplicationServices \
+  -framework Carbon
+```
+
+**Requirements**:
+- Xcode Command Line Tools installed
+- macOS 10.15+ for ApplicationServices APIs
+
+<Warning>
+If Swift compilation fails, the app falls back to standard hotkeys (no Globe/Fn key support).
+</Warning>
+
+### Windows Key Listener
+
+**Source**: `resources/windows-key-listener.c`
+
+**Build script**: `scripts/build-windows-key-listener.js`
+
+```bash
+# Compile with MSVC (preferred)
+cl /O2 windows-key-listener.c /Fe:windows-key-listener.exe user32.lib
+
+# Or MinGW-w64
+x86_64-w64-mingw32-gcc -O2 windows-key-listener.c -o windows-key-listener.exe -luser32
+```
+
+**Prebuilt binary**: Downloaded from GitHub releases if compilation fails.
+
+### Linux Fast Paste
+
+**Source**: `resources/linux-fast-paste.c`
+
+**Build script**: `scripts/build-linux-fast-paste.js`
+
+```bash
+# Compile with XTest support
+gcc -O2 -o linux-fast-paste linux-fast-paste.c -lX11 -lXtst
+```
+
+**Fallback**: If compilation fails, app uses `xdotool` or `wtype`.
+
+## Building for Distribution
+
+### Unsigned Builds (Personal Use)
+
+Best for testing or personal use without code signing:
+
+```bash
+# Build without signing (skips notarization)
+CSC_IDENTITY_AUTO_DISCOVERY=false npm run pack
+```
+
+Output locations:
+- **macOS**: `dist/mac-arm64/OpenWhispr.app` (or `dist/mac/` for Intel)
+- **Windows**: `dist/win-unpacked/OpenWhispr.exe`
+- **Linux**: `dist/linux-unpacked/openwhispr`
+
+<Accordion title="macOS Security Warning">
+  When opening an unsigned app, macOS shows a security warning.
+  
+  **Workaround**:
+  1. Right-click `OpenWhispr.app`
+  2. Select "Open"
+  3. Click "Open" in the dialog
+  
+  This only needs to be done once.
+</Accordion>
+
+### Signed macOS Builds
+
+<Steps>
+  <Step title="Obtain certificates">
+    1. Join Apple Developer Program ($99/year)
+    2. Create "Developer ID Application" certificate
+    3. Download and install in Keychain Access
+    4. Export as `.p12` file (optional, for CI)
+  </Step>
+  
+  <Step title="Configure notarization">
+    Create `~/.electron-builder-notarize.json`:
+    ```json
+    {
+      "appleId": "your@email.com",
+      "appleIdPassword": "@keychain:AC_PASSWORD",
+      "teamId": "YOUR_TEAM_ID"
+    }
+    ```
+    
+    Store password in Keychain:
+    ```bash
+    xcrun notarytool store-credentials "AC_PASSWORD" \
+      --apple-id "your@email.com" \
+      --team-id "YOUR_TEAM_ID" \
+      --password "app-specific-password"
+    ```
+  </Step>
+  
+  <Step title="Build with signing">
+    ```bash
+    npm run build:mac
+    ```
+    
+    This will:
+    1. Build React app
+    2. Package with electron-builder
+    3. Sign all binaries and frameworks
+    4. Create DMG and ZIP
+    5. Notarize with Apple (10-30 minutes)
+    6. Staple notarization ticket
+  </Step>
+  
+  <Step title="Verify notarization">
+    ```bash
+    spctl -a -vv -t install dist/OpenWhispr-1.5.5.dmg
+    # Output: accepted
+    # source=Notarized Developer ID
+    ```
+  </Step>
+</Steps>
+
+### Signed Windows Builds
+
+<Steps>
+  <Step title="Obtain code signing certificate">
+    Purchase from DigiCert, Sectigo, or another CA.
+    
+    - **EV certificate** (recommended): Stored on USB token, instant SmartScreen reputation
+    - **Standard certificate**: Cheaper but requires reputation building
+  </Step>
+  
+  <Step title="Configure electron-builder">
+    Export certificate as `.pfx` file with password.
+    
+    Set environment variables:
+    ```powershell
+    $env:CSC_LINK = "C:\path\to\certificate.pfx"
+    $env:CSC_KEY_PASSWORD = "certificate-password"
+    ```
+  </Step>
+  
+  <Step title="Build with signing">
+    ```bash
+    npm run build:win
+    ```
+    
+    Outputs:
+    - `dist/OpenWhispr-1.5.5-setup.exe` (NSIS installer, signed)
+    - `dist/OpenWhispr-1.5.5-win.zip` (portable, signed)
+  </Step>
+</Steps>
+
+### Linux Packages
+
+```bash
+npm run build:linux
+```
+
+Generates multiple package formats:
+
+<Tabs>
+  <Tab title="AppImage">
+    **File**: `dist/OpenWhispr-1.5.5-linux-x64.AppImage`
+    
+    Self-contained, portable executable:
+    ```bash
+    chmod +x OpenWhispr-1.5.5-linux-x64.AppImage
+    ./OpenWhispr-1.5.5-linux-x64.AppImage
+    ```
+  </Tab>
+  
+  <Tab title="Debian (.deb)">
+    **File**: `dist/OpenWhispr-1.5.5-linux-x64.deb`
+    
+    Install with:
+    ```bash
+    sudo apt install ./OpenWhispr-1.5.5-linux-x64.deb
+    ```
+    
+    **Uninstall hook**: Deletes `~/.cache/openwhispr/whisper-models/` on removal
+  </Tab>
+  
+  <Tab title="RPM">
+    **File**: `dist/OpenWhispr-1.5.5-linux-x64.rpm`
+    
+    Install with:
+    ```bash
+    sudo dnf install ./OpenWhispr-1.5.5-linux-x64.rpm
+    ```
+  </Tab>
+  
+  <Tab title="tar.gz">
+    **File**: `dist/OpenWhispr-1.5.5-linux-x64.tar.gz`
+    
+    Extract and run:
+    ```bash
+    tar -xzf OpenWhispr-1.5.5-linux-x64.tar.gz
+    cd OpenWhispr-1.5.5/
+    ./openwhispr
+    ```
+  </Tab>
+</Tabs>
+
+## Multi-Platform Builds
+
+Build for all platforms from a single host (requires Docker or VMs):
+
+```bash
+# macOS → Build for macOS, Windows, Linux
+npm run download:whisper-cpp:all
+npm run download:llama-server:all
+npm run download:sherpa-onnx:all
+
+cd src && vite build && cd ..
+
+# macOS (native)
+electron-builder --mac
+
+# Windows (requires Wine or Windows VM)
+electron-builder --win --x64
+
+# Linux (requires Docker)
+electron-builder --linux --x64
+```
+
+<Warning>
+Cross-compilation limitations:
+- **macOS → Windows/Linux**: Requires Wine (Windows) or Docker (Linux)
+- **Windows → macOS**: Not possible (need macOS for signing)
+- **Linux → macOS/Windows**: Docker for Windows, impossible for macOS
+</Warning>
+
+## Code Signing Considerations
+
+<Accordion title="macOS Entitlements">
+  **File**: `resources/mac/entitlements.mac.plist`
+  
+  ```xml
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+  <key>com.apple.security.device.audio-input</key>
+  <true/>
+  ```
+  
+  Required for:
+  - **allow-unsigned-executable-memory**: V8 JIT in Electron
+  - **disable-library-validation**: Native modules (better-sqlite3, ffmpeg)
+  - **audio-input**: Microphone access
+</Accordion>
+
+<Accordion title="Windows Authenticode">
+  Signing adds:
+  - Publisher name in installer
+  - Removal of "Unknown publisher" warning
+  - Faster SmartScreen reputation (with EV cert)
+  
+  **Note**: Standard certs require downloads before SmartScreen trusts the app.
+</Accordion>
+
+<Accordion title="Linux Signing">
+  Not commonly used. Most users trust:
+  - **Repository packages**: Official distro repos
+  - **Flatpak**: Sandboxed with explicit permissions
+  - **AppImage**: User verifies SHA256 checksum
+</Accordion>
+
+## Troubleshooting Build Issues
+
+<Accordion title="better-sqlite3 compilation fails">
+  **Symptom**: `Error: Cannot find module 'better-sqlite3'`
+  
+  **Fix**:
+  ```bash
+  # Rebuild native modules for current Electron version
+  npm run postinstall
+  
+  # Or manually:
+  npm rebuild better-sqlite3 --build-from-source --runtime=electron --target=36.9.5
+  ```
+</Accordion>
+
+<Accordion title="Vite build fails">
+  **Symptom**: TypeScript errors or missing modules
+  
+  **Fix**:
+  ```bash
+  # Clear Vite cache
+  rm -rf src/.vite src/dist src/node_modules/.vite
+  
+  # Reinstall dependencies
+  cd src
+  npm install
+  npm run build
+  ```
+</Accordion>
+
+<Accordion title="whisper-cpp not found">
+  **Symptom**: "whisper-cpp binary not found" at runtime
+  
+  **Fix**:
+  ```bash
+  # Download binaries for current platform
+  npm run download:whisper-cpp
+  
+  # Verify they're in resources/bin/
+  ls -la resources/bin/whisper-cpp-*
+  ```
+</Accordion>
+
+<Accordion title="macOS notarization fails">
+  **Common issues**:
+  1. **Wrong certificate**: Must be "Developer ID Application", not "Mac Developer"
+  2. **Hardened runtime missing**: Check `electron-builder.json` → `mac.hardenedRuntime: true`
+  3. **Invalid entitlements**: Verify `entitlements.mac.plist` syntax
+  4. **Apple ID password**: Use app-specific password, not account password
+  
+  **Debug**:
+  ```bash
+  # Check notarization status
+  xcrun notarytool log <submission-id>
+  ```
+</Accordion>
+
+<Accordion title="Windows binary missing vcruntime140.dll">
+  **Symptom**: "VCRUNTIME140.dll was not found" on some Windows machines
+  
+  **Fix**: Include Visual C++ Redistributable in installer
+  
+  ```json
+  // electron-builder.json
+  "nsis": {
+    "include": "resources/nsis/vcredist-check.nsh"
+  }
+  ```
+</Accordion>
+
+## CI/CD Pipeline Example
+
+<CodeGroup>
+
+```yaml GitHub Actions (macOS)
+name: Build macOS
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Compile native binaries
+        run: npm run compile:native
+      
+      - name: Download runtime binaries
+        run: |
+          npm run download:whisper-cpp
+          npm run download:llama-server
+          npm run download:sherpa-onnx
+      
+      - name: Build app
+        env:
+          CSC_LINK: ${{ secrets.MAC_CERT_BASE64 }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npm run build:mac
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: |
+            dist/*.dmg
+            dist/*.zip
+```
+
+```yaml GitHub Actions (Windows)
+name: Build Windows
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Compile native binaries
+        run: npm run compile:native
+      
+      - name: Download runtime binaries
+        run: |
+          npm run download:whisper-cpp
+          npm run download:llama-server
+          npm run download:sherpa-onnx
+          npm run download:nircmd
+          npm run download:windows-key-listener
+      
+      - name: Build app
+        env:
+          CSC_LINK: ${{ secrets.WIN_CERT_BASE64 }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CERT_PASSWORD }}
+        run: npm run build:win
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: |
+            dist/*.exe
+            dist/*.zip
+```
+
+</CodeGroup>
+
+## Performance Optimization
+
+<Steps>
+  <Step title="Minimize bundle size">
+    - Exclude dev dependencies from production build
+    - Use `files` array in `electron-builder.json` to exclude unnecessary files
+    - Enable ASAR packaging (default)
+  </Step>
+  
+  <Step title="Optimize React build">
+    ```javascript
+    // vite.config.js
+    export default {
+      build: {
+        minify: 'terser',
+        terserOptions: {
+          compress: {
+            drop_console: true,  // Remove console.logs in production
+          },
+        },
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              vendor: ['react', 'react-dom'],
+            },
+          },
+        },
+      },
+    };
+    ```
+  </Step>
+  
+  <Step title="Lazy load components">
+    ```typescript
+    const SettingsPage = lazy(() => import('./components/SettingsPage'));
+    const ControlPanel = lazy(() => import('./components/ControlPanel'));
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="sitemap" href="/advanced/architecture">
+    Understand the codebase structure
+  </Card>
+  <Card title="Model Registry" icon="database" href="/advanced/model-registry">
+    Learn how models are managed
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+    Debug common build and runtime issues
+  </Card>
+</CardGroup>

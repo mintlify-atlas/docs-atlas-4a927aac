@@ -1,80 +1,451 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start Guide
+description: Get your first transcription working in under 5 minutes with OpenWhispr
 ---
 
-## Get started in three steps
+# Quick Start Guide
 
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+Get OpenWhispr up and running in under 5 minutes. This guide will walk you through installation, setup, and your first successful transcription.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+**Already installed?** Skip to [First Transcription](#your-first-transcription).
 </Note>
+
+## Installation
+
+<Steps>
+  <Step title="Download OpenWhispr">
+    Visit the [GitHub Releases](https://github.com/OpenWhispr/openwhispr/releases/latest) page and download the appropriate installer for your platform:
+    
+    - **macOS**: `OpenWhispr-{version}-mac-{arch}.dmg` (Apple Silicon or Intel)
+    - **Windows**: `OpenWhispr-{version}-win-x64.exe` (NSIS installer)
+    - **Linux**: Choose from `.AppImage`, `.deb`, `.rpm`, or `.tar.gz`
+  </Step>
+  
+  <Step title="Install the application">
+    <Tabs>
+      <Tab title="macOS">
+        1. Open the `.dmg` file
+        2. Drag **OpenWhispr.app** to your Applications folder
+        3. Right-click the app and select **Open** (first time only)
+        4. Click **Open** in the security dialog
+        
+        <Info>
+        macOS may show a security warning for unsigned apps. Right-click → Open bypasses this.
+        </Info>
+      </Tab>
+      
+      <Tab title="Windows">
+        1. Run the `OpenWhispr-Setup-{version}.exe` installer
+        2. Follow the installation wizard
+        3. Launch from Start Menu or Desktop shortcut
+        
+        <Info>
+        Windows may show SmartScreen warning. Click "More info" → "Run anyway" if needed.
+        </Info>
+      </Tab>
+      
+      <Tab title="Linux">
+        <CodeGroup>
+        ```bash AppImage
+        # Make executable
+        chmod +x OpenWhispr-*.AppImage
+        
+        # Run directly
+        ./OpenWhispr-*.AppImage
+        ```
+        
+        ```bash Debian/Ubuntu
+        # Install .deb package
+        sudo apt install ./OpenWhispr-*-linux-x64.deb
+        
+        # Launch from applications menu or terminal
+        openwhispr
+        ```
+        
+        ```bash Fedora/RHEL
+        # Install .rpm package
+        sudo dnf install ./OpenWhispr-*-linux-x64.rpm
+        
+        # Launch from applications menu or terminal
+        openwhispr
+        ```
+        
+        ```bash Universal tar.gz
+        # Extract archive
+        tar -xzf OpenWhispr-*-linux-x64.tar.gz
+        cd OpenWhispr-*/
+        
+        # Run directly (no installation required)
+        ./openwhispr
+        ```
+        </CodeGroup>
+      </Tab>
+    </Tabs>
+  </Step>
+  
+  <Step title="Grant permissions">
+    When you first launch OpenWhispr, your OS will request necessary permissions:
+    
+    **Microphone Access** (Required)
+    - Needed to record your voice
+    - You'll see a system prompt on first use
+    
+    **Accessibility Permissions** (macOS only, recommended)
+    - Enables automatic text pasting at cursor
+    - Go to **System Settings → Privacy & Security → Accessibility**
+    - Enable checkbox for OpenWhispr
+    - Without this, text copies to clipboard (manual paste with Cmd+V)
+    
+    <Tip>
+    The Control Panel has a "Fix Permission Issues" button if you need to adjust settings later.
+    </Tip>
+  </Step>
+</Steps>
+
+## First-Time Setup
+
+OpenWhispr guides you through setup with an interactive onboarding flow:
+
+<Steps>
+  <Step title="Welcome Screen">
+    Choose your setup path:
+    
+    - **Sign In**: Use OpenWhispr Cloud (recommended for beginners)
+    - **Skip for Now**: Set up local or BYOK processing
+  </Step>
+  
+  <Step title="Choose Processing Method">
+    <Tabs>
+      <Tab title="OpenWhispr Cloud (Easiest)">
+        **Recommended for first-time users**
+        
+        1. Click "Sign in with Google" or "Sign in with Email"
+        2. Complete authentication flow
+        3. Verify email if using email sign-in
+        4. Start with 2,000 free words/week (7-day Pro trial included)
+        
+        <Info>
+        No API keys, no downloads. Start transcribing immediately after sign-in.
+        </Info>
+      </Tab>
+      
+      <Tab title="Bring Your Own Key">
+        **For users with existing API accounts**
+        
+        1. Select "Cloud (API Key)" as processing method
+        2. Choose provider: OpenAI, Groq, Mistral, or AssemblyAI
+        3. Enter your API key
+        4. Select transcription model
+        
+        <CodeGroup>
+        ```env OpenAI
+        OPENAI_API_KEY=sk-proj-...
+        ```
+        
+        ```env Groq
+        GROQ_API_KEY=gsk_...
+        ```
+        
+        ```env Mistral
+        MISTRAL_API_KEY=...
+        ```
+        </CodeGroup>
+        
+        <Warning>
+        API keys are stored securely in your system keychain and never transmitted except to the chosen provider.
+        </Warning>
+      </Tab>
+      
+      <Tab title="Local Processing">
+        **For maximum privacy**
+        
+        1. Select "Local" as processing method
+        2. Choose engine: **Whisper** (quality) or **Parakeet** (speed)
+        3. Select model size
+        4. Download model (automatic on first use)
+        
+        **Whisper Models:**
+        - **base** (142MB) - Recommended for most users
+        - **small** (466MB) - Better quality
+        - **tiny** (75MB) - Fastest, lower accuracy
+        
+        **Parakeet Models:**
+        - **parakeet-tdt-0.6b-v3** (680MB) - Fast, 25 languages
+        
+        <Info>
+        Models download to `~/.cache/openwhispr/` and are reused across sessions.
+        </Info>
+      </Tab>
+    </Tabs>
+  </Step>
+  
+  <Step title="Configure Hotkey">
+    Set your global dictation hotkey:
+    
+    - **Default**: Backtick (\`) on most platforms
+    - **macOS**: Option to use Globe/Fn key
+    - **Custom**: Click the input field and press your preferred key combination
+    
+    **Recommended hotkeys:**
+    - Simple: \`, F8, F9
+    - Compound: `Cmd+Shift+D`, `Ctrl+Alt+V`
+    
+    <Tip>
+    Choose an unused key that's easy to reach. You can change this later in Settings.
+    </Tip>
+  </Step>
+  
+  <Step title="Select Activation Mode">
+    Choose how the hotkey triggers recording:
+    
+    - **Tap to Toggle** (Default): Press once to start, press again to stop
+    - **Push to Talk** (Windows): Hold key to record, release to transcribe
+    
+    <Note>
+    Push-to-talk requires native keyboard hooks and is currently only available on Windows.
+    </Note>
+  </Step>
+  
+  <Step title="Complete Setup">
+    Click "Finish Setup" to save your configuration. OpenWhispr is now ready to use!
+  </Step>
+</Steps>
+
+## Your First Transcription
+
+Now let's create your first transcription:
+
+<Steps>
+  <Step title="Open any text field">
+    Click into any application where you want text to appear:
+    - Email composer
+    - Note-taking app
+    - Text editor
+    - Chat application
+    - Anywhere with a text input!
+  </Step>
+  
+  <Step title="Press your hotkey">
+    Press the hotkey you configured (default: backtick \`).
+    
+    You'll see:
+    - A small **draggable panel** appears
+    - Panel shows **recording animation** (pulsing waves)
+    - Your microphone starts capturing audio
+    
+    <Info>
+    The panel can be dragged anywhere on screen. Its position is saved for next time.
+    </Info>
+  </Step>
+  
+  <Step title="Speak clearly">
+    Say your message naturally. Examples:
+    
+    - "Hello, this is a test of OpenWhispr dictation."
+    - "Meeting notes: Discussed Q1 roadmap with Sarah and John."
+    - "Hey OpenWhispr, write a professional email thanking the client for their feedback."
+    
+    <Tip>
+    Speak naturally at a normal pace. Pause briefly between sentences for better punctuation.
+    </Tip>
+  </Step>
+  
+  <Step title="Stop recording">
+    Press your hotkey again (or release if using push-to-talk).
+    
+    What happens:
+    - Recording stops immediately
+    - Panel shows **processing animation** (loading dots)
+    - Audio is transcribed (local or cloud, depending on your setup)
+    - Processing time: 1-10 seconds depending on method and length
+  </Step>
+  
+  <Step title="See your transcription">
+    Transcribed text appears automatically:
+    
+    - **With accessibility permissions**: Text pastes at cursor location
+    - **Without permissions**: Text copies to clipboard (paste with Cmd+V or Ctrl+V)
+    - **AI processing**: If you addressed your agent ("Hey OpenWhispr..."), the AI-processed result appears
+    
+    <Info>
+    All transcriptions are saved to local history. Access them via the Control Panel.
+    </Info>
+  </Step>
+</Steps>
+
+## Testing Different Features
+
+### Basic Dictation
+
+Simple transcription without AI processing:
+
+```text
+Press hotkey → "This is a simple test message" → Press hotkey
+Result: This is a simple test message
+```
+
+### AI-Powered Processing
+
+Address your agent for intelligent text transformation:
+
+```text
+Press hotkey → "Hey OpenWhispr, make this more professional: thanks for the help" → Press hotkey
+Result: Thank you for your assistance. I appreciate your help with this matter.
+```
+
+<Note>
+AI processing requires an AI provider to be configured (OpenWhispr Cloud, OpenAI, Anthropic, Gemini, Groq, or local LLM).
+</Note>
+
+### Custom Dictionary
+
+Improve accuracy for technical terms:
+
+1. Open **Control Panel** (right-click tray icon)
+2. Go to **Settings → Custom Dictionary**
+3. Add terms: "Kubernetes", "OAuth", "PostgreSQL"
+4. Dictate: "We deployed the app to Kubernetes using OAuth for authentication"
+5. Results are now more accurate!
+
+## Accessing the Control Panel
+
+The Control Panel is your hub for settings, history, and model management:
+
+**How to open:**
+- **macOS**: Right-click the menu bar icon → "Show Control Panel"
+- **Windows**: Right-click the system tray icon → "Show Control Panel"
+- **Linux**: Right-click the system tray icon → "Show Control Panel"
+
+**What you can do:**
+- View and search transcription history
+- Switch between local and cloud processing
+- Download and manage Whisper/Parakeet models
+- Configure API keys for different providers
+- Customize hotkey and activation mode
+- Add words to custom dictionary
+- Check system permissions
+- View usage statistics (for cloud users)
+
+## Common First-Time Issues
+
+<AccordionGroup>
+  <Accordion title="No audio detected">
+    **Solutions:**
+    
+    1. Check microphone permissions in system settings
+    2. Select correct input device in Control Panel → Settings
+    3. Test microphone with another app to verify hardware
+    4. Restart OpenWhispr after granting permissions
+    
+    **Open sound settings:**
+    - macOS: Control Panel → "Open Sound Settings" button
+    - Windows: Control Panel → "Open Sound Settings" button
+    - Linux: Use `pavucontrol` or system sound settings
+  </Accordion>
+  
+  <Accordion title="Hotkey doesn't work">
+    **Solutions:**
+    
+    1. Check if another app is using the same hotkey
+    2. Try a different key (F8, F9, or compound hotkey)
+    3. On GNOME Wayland: Check Settings → Keyboard → Shortcuts for conflicts
+    4. Restart the app after changing hotkeys
+    
+    <Info>
+    OpenWhispr will automatically fall back to F8 if your chosen hotkey is unavailable.
+    </Info>
+  </Accordion>
+  
+  <Accordion title="Text doesn't paste automatically">
+    **macOS:**
+    - Grant accessibility permissions in System Settings
+    - Go to Privacy & Security → Accessibility
+    - Enable OpenWhispr checkbox
+    - Restart app if needed
+    
+    **Windows:**
+    - No special permissions needed
+    - Text should paste automatically via SendInput API
+    - If failing, text copies to clipboard (Ctrl+V to paste)
+    
+    **Linux:**
+    - Install paste tool: `sudo apt install xdotool` (X11)
+    - For Wayland: `sudo apt install wtype` or `ydotool`
+    - Text always copies to clipboard as fallback
+  </Accordion>
+  
+  <Accordion title="Model download fails (local processing)">
+    **Solutions:**
+    
+    1. Check internet connection
+    2. Ensure sufficient disk space (75MB to 3GB depending on model)
+    3. Try downloading manually from Control Panel → Settings → Models
+    4. Check `~/.cache/openwhispr/` permissions
+    5. Try a smaller model first (tiny or base)
+    
+    <Warning>
+    Models download from HuggingFace and may take several minutes on slow connections.
+    </Warning>
+  </Accordion>
+  
+  <Accordion title="Transcription is inaccurate">
+    **Improve accuracy:**
+    
+    1. Use a better quality model (small, medium, or large)
+    2. Add specialized terms to Custom Dictionary
+    3. Speak clearly and at a moderate pace
+    4. Reduce background noise
+    5. Use a better quality microphone
+    6. Set your language explicitly (Settings → Language) instead of auto-detect
+    
+    <Tip>
+    The **base** model offers the best balance for most users. Upgrade to **small** or **medium** for technical content.
+    </Tip>
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Now that you have OpenWhispr working:
+
+<CardGroup cols={2}>
+  <Card title="Explore Features" icon="compass" href="/features/dictation">
+    Learn about AI processing, custom dictionary, and advanced options
+  </Card>
+  <Card title="Configuration Guide" icon="sliders" href="/configuration/hotkeys">
+    Customize settings, hotkeys, and processing preferences
+  </Card>
+  <Card title="Platform Guides" icon="keyboard" href="/platforms/macos">
+    Platform-specific features and setup
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+    Get help with common issues and error messages
+  </Card>
+  <Card title="Documentation" icon="book" href="/introduction">
+    Return to main documentation
+  </Card>
+  <Card title="Configuration Guide" icon="sliders" href="/configuration">
+    Customize settings, hotkeys, and processing preferences
+  </Card>
+  <Card title="Keyboard Shortcuts" icon="keyboard" href="/shortcuts">
+    Master all keyboard shortcuts and productivity tips
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/troubleshooting">
+    Solutions for common issues and platform-specific problems
+  </Card>
+</CardGroup>
+
+## Getting Help
+
+<CardGroup cols={3}>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/OpenWhispr/openwhispr/issues">
+    Report bugs or request features
+  </Card>
+  <Card title="Documentation" icon="book" href="/">
+    Browse complete documentation
+  </Card>
+  <Card title="Community" icon="users" href="https://github.com/OpenWhispr/openwhispr/discussions">
+    Ask questions and share tips
+  </Card>
+</CardGroup>

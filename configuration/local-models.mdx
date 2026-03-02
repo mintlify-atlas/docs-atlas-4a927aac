@@ -1,0 +1,463 @@
+---
+title: Local Models
+description: Download and manage Whisper and Parakeet models for privacy-first local transcription
+---
+
+## Overview
+
+OpenWhispr supports two local transcription engines for completely private, offline speech-to-text:
+
+- **Whisper** (via whisper.cpp) - Multiple model sizes with quality/speed tradeoffs
+- **Parakeet** (via sherpa-onnx) - NVIDIA's multilingual ASR model with fast CPU inference
+
+<Info>
+  Local models keep your voice data completely private - audio never leaves your device.
+</Info>
+
+## Whisper Models
+
+Whisper models use the GGML format and are downloaded from HuggingFace.
+
+### Available Whisper Models
+
+<Tabs>
+  <Tab title="tiny">
+    **Size:** ~75MB
+    
+    **Speed:** Fastest
+    
+    **Quality:** Lower accuracy, good for simple dictation
+    
+    **Recommended for:** Quick notes, low-end hardware
+    
+    **File:** `ggml-tiny.bin`
+  </Tab>
+  
+  <Tab title="base">
+    **Size:** ~142MB
+    
+    **Speed:** Fast
+    
+    **Quality:** Good balance of accuracy and speed
+    
+    **Recommended for:** General use (recommended)
+    
+    **File:** `ggml-base.bin`
+    
+    <Tip>
+      This is the recommended model for most users. It provides excellent accuracy while remaining fast.
+    </Tip>
+  </Tab>
+  
+  <Tab title="small">
+    **Size:** ~466MB
+    
+    **Speed:** Moderate
+    
+    **Quality:** Better accuracy, slower processing
+    
+    **Recommended for:** Professional transcription
+    
+    **File:** `ggml-small.bin`
+  </Tab>
+  
+  <Tab title="medium">
+    **Size:** ~1.5GB
+    
+    **Speed:** Slow
+    
+    **Quality:** High accuracy
+    
+    **Recommended for:** High-quality transcription needs
+    
+    **File:** `ggml-medium.bin`
+  </Tab>
+  
+  <Tab title="large">
+    **Size:** ~3GB
+    
+    **Speed:** Slowest
+    
+    **Quality:** Best quality, most accurate
+    
+    **Recommended for:** Maximum accuracy, powerful hardware
+    
+    **File:** `ggml-large-v3.bin`
+  </Tab>
+  
+  <Tab title="turbo">
+    **Size:** ~1.6GB
+    
+    **Speed:** Fast with good quality
+    
+    **Quality:** Near-large quality with better speed
+    
+    **Recommended for:** Balance of quality and performance
+    
+    **File:** `ggml-large-v3-turbo.bin`
+  </Tab>
+</Tabs>
+
+### Model Characteristics
+
+| Model | Size | Quality | Speed | Use Case |
+|-------|------|---------|-------|----------|
+| tiny | 75MB | ⭐⭐ | ⚡⚡⚡⚡⚡ | Quick notes |
+| base | 142MB | ⭐⭐⭐ | ⚡⚡⚡⚡ | General use |
+| small | 466MB | ⭐⭐⭐⭐ | ⚡⚡⚡ | Professional |
+| medium | 1.5GB | ⭐⭐⭐⭐ | ⚡⚡ | High quality |
+| large | 3GB | ⭐⭐⭐⭐⭐ | ⚡ | Best quality |
+| turbo | 1.6GB | ⭐⭐⭐⭐⭐ | ⚡⚡⚡ | Quality + speed |
+
+## NVIDIA Parakeet Models
+
+Parakeet models use ONNX format with INT8 quantization for efficient CPU inference.
+
+### Available Parakeet Models
+
+<Tabs>
+  <Tab title="parakeet-tdt-0.6b-v3">
+    **Size:** ~680MB
+    
+    **Languages:** 25 languages with auto-detection
+    
+    **Speed:** Very fast on CPU
+    
+    **Quality:** Comparable to Whisper small/base
+    
+    **Supported Languages:**
+    - Bulgarian, Croatian, Czech, Danish, Dutch
+    - English, Estonian, Finnish, French, German
+    - Greek, Hungarian, Italian, Latvian, Lithuanian
+    - Maltese, Polish, Portuguese, Romanian, Slovak
+    - Slovenian, Spanish, Swedish, Russian, Ukrainian
+    
+    **Runtime:** sherpa-onnx (bundled with app)
+    
+    **Model Files:**
+    - `encoder.int8.onnx`
+    - `decoder.int8.onnx`
+    - `joiner.int8.onnx`
+    - `tokens.txt`
+    
+    <Tip>
+      Parakeet is ideal for multilingual users or those who want fast transcription without GPU acceleration.
+    </Tip>
+  </Tab>
+</Tabs>
+
+## Downloading Models Through the UI
+
+<Steps>
+  <Step title="Open Control Panel">
+    Right-click the OpenWhispr tray icon and select **Control Panel**.
+  </Step>
+  
+  <Step title="Navigate to Settings">
+    Go to **Settings** → **Transcription**.
+  </Step>
+  
+  <Step title="Select Local Processing">
+    Choose **Local Processing** from the transcription mode options.
+  </Step>
+  
+  <Step title="Choose Your Engine">
+    Select either:
+    - **Whisper** (whisper.cpp)
+    - **NVIDIA Parakeet** (sherpa-onnx)
+  </Step>
+  
+  <Step title="Select and Download Model">
+    For Whisper:
+    - Choose a model size (tiny, base, small, medium, large, turbo)
+    - Click **Download**
+    - Wait for download to complete (progress bar shows status)
+    
+    For Parakeet:
+    - Select `parakeet-tdt-0.6b-v3`
+    - Click **Download**
+    - Wait for download and extraction
+  </Step>
+  
+  <Step title="Start Using">
+    Once downloaded, the model is immediately available for transcription.
+  </Step>
+</Steps>
+
+<Warning>
+  Large models (medium, large, turbo) require significant disk space. Ensure you have enough free space before downloading.
+</Warning>
+
+## Storage Locations
+
+Models are stored in the OpenWhispr cache directory:
+
+<Tabs>
+  <Tab title="macOS">
+    **Whisper models:**
+    ```bash
+    ~/.cache/openwhispr/whisper-models/
+    ```
+    
+    **Parakeet models:**
+    ```bash
+    ~/.cache/openwhispr/parakeet-models/
+    ```
+  </Tab>
+  
+  <Tab title="Windows">
+    **Whisper models:**
+    ```bash
+    %USERPROFILE%\.cache\openwhispr\whisper-models\
+    ```
+    
+    **Parakeet models:**
+    ```bash
+    %USERPROFILE%\.cache\openwhispr\parakeet-models\
+    ```
+  </Tab>
+  
+  <Tab title="Linux">
+    **Whisper models:**
+    ```bash
+    ~/.cache/openwhispr/whisper-models/
+    ```
+    
+    **Parakeet models:**
+    ```bash
+    ~/.cache/openwhispr/parakeet-models/
+    ```
+  </Tab>
+</Tabs>
+
+### Model Directory Structure
+
+**Whisper:**
+```
+~/.cache/openwhispr/whisper-models/
+├── ggml-tiny.bin
+├── ggml-base.bin
+├── ggml-small.bin
+├── ggml-medium.bin
+├── ggml-large-v3.bin
+└── ggml-large-v3-turbo.bin
+```
+
+**Parakeet:**
+```
+~/.cache/openwhispr/parakeet-models/
+└── parakeet-tdt-0.6b-v3/
+    ├── encoder.int8.onnx
+    ├── decoder.int8.onnx
+    ├── joiner.int8.onnx
+    └── tokens.txt
+```
+
+## Model Cleanup and Disk Space Management
+
+### Deleting Individual Models
+
+<Steps>
+  <Step title="Open Model Management">
+    Go to **Control Panel** → **Settings** → **Transcription** → **Manage Local Models**.
+  </Step>
+  
+  <Step title="Select Model to Delete">
+    Click the **Delete** button next to the model you want to remove.
+  </Step>
+  
+  <Step title="Confirm Deletion">
+    Confirm the deletion to free up disk space.
+    
+    The UI will show how much space you'll reclaim.
+  </Step>
+</Steps>
+
+### Removing All Models
+
+<Steps>
+  <Step title="Go to Storage Settings">
+    Navigate to **Settings** → **General** → **Local Model Storage**.
+  </Step>
+  
+  <Step title="Click Remove All Models">
+    Click the **Remove Downloaded Models** button.
+  </Step>
+  
+  <Step title="Confirm Bulk Deletion">
+    Confirm to delete all Whisper and Parakeet models at once.
+    
+    <Warning>
+      This action cannot be undone. You'll need to re-download models to use local transcription again.
+    </Warning>
+  </Step>
+</Steps>
+
+### Manual Cleanup
+
+You can also manually delete model files from the cache directory:
+
+<Tabs>
+  <Tab title="macOS/Linux">
+    ```bash
+    # Remove all Whisper models
+    rm -rf ~/.cache/openwhispr/whisper-models/
+    
+    # Remove all Parakeet models
+    rm -rf ~/.cache/openwhispr/parakeet-models/
+    
+    # Remove specific Whisper model
+    rm ~/.cache/openwhispr/whisper-models/ggml-large-v3.bin
+    ```
+  </Tab>
+  
+  <Tab title="Windows">
+    ```powershell
+    # Remove all Whisper models
+    Remove-Item -Recurse -Force $env:USERPROFILE\.cache\openwhispr\whisper-models
+    
+    # Remove all Parakeet models
+    Remove-Item -Recurse -Force $env:USERPROFILE\.cache\openwhispr\parakeet-models
+    
+    # Remove specific Whisper model
+    Remove-Item $env:USERPROFILE\.cache\openwhispr\whisper-models\ggml-large-v3.bin
+    ```
+  </Tab>
+</Tabs>
+
+## Choosing Between Whisper and Parakeet
+
+### Use Whisper When:
+- You need multiple model sizes to balance quality and speed
+- You're transcribing English primarily
+- You want the best possible accuracy (large/turbo models)
+- You have a GPU and want CUDA acceleration (if enabled)
+
+### Use Parakeet When:
+- You need multilingual support (25 languages)
+- You want fast CPU inference without GPU
+- You're on lower-end hardware
+- You prefer a single, well-optimized model
+
+## Performance Optimization
+
+### Hardware Acceleration
+
+**Whisper CUDA Support (Experimental):**
+
+If you have an NVIDIA GPU, you can enable CUDA acceleration:
+
+```bash
+# In .env file
+WHISPER_CUDA_ENABLED=true
+```
+
+<Note>
+  CUDA support requires compatible NVIDIA drivers and CUDA toolkit installation.
+</Note>
+
+**Parakeet CPU Optimization:**
+
+Parakeet models are optimized for CPU inference using INT8 quantization. No additional configuration needed.
+
+### Pre-warming Models
+
+OpenWhispr pre-warms models on startup to eliminate cold-start delays:
+
+- **Whisper:** Server starts when you select a model
+- **Parakeet:** Server pre-warms if `LOCAL_TRANSCRIPTION_PROVIDER=nvidia`
+
+**Configuration:**
+
+```bash
+# .env file
+LOCAL_TRANSCRIPTION_PROVIDER=nvidia  # or "whisper"
+PARAKEET_MODEL=parakeet-tdt-0.6b-v3
+```
+
+## Troubleshooting
+
+<Accordion title="Download Failed or Incomplete">
+  **Symptoms:** Download stops partway through or model doesn't work
+  
+  **Solutions:**
+  1. Check your internet connection
+  2. Ensure you have enough disk space (model size × 2.5 for extraction)
+  3. Try downloading again - OpenWhispr resumes interrupted downloads
+  4. Check the logs for specific error messages
+  5. Manually delete partial files and retry:
+     ```bash
+     # Look for .tmp or incomplete files
+     ls -la ~/.cache/openwhispr/whisper-models/
+     ```
+</Accordion>
+
+<Accordion title="Model Not Found Error">
+  **Symptoms:** Error saying model isn't downloaded when it should be
+  
+  **Solutions:**
+  1. Verify the model file exists in the cache directory
+  2. Check file permissions (should be readable by your user)
+  3. For Parakeet, ensure all 4 required files exist:
+     - `encoder.int8.onnx`
+     - `decoder.int8.onnx`
+     - `joiner.int8.onnx`
+     - `tokens.txt`
+  4. Try re-downloading the model
+</Accordion>
+
+<Accordion title="Transcription Slow or Hangs">
+  **Symptoms:** Transcription takes a long time or appears to freeze
+  
+  **Solutions:**
+  1. **For Whisper:** Try a smaller model (base instead of large)
+  2. **For Parakeet:** Ensure sherpa-onnx binary is accessible
+  3. Check CPU usage - high background activity may slow processing
+  4. For very long recordings, consider splitting into shorter clips
+  5. Check the logs for server timeout errors
+</Accordion>
+
+<Accordion title="Out of Disk Space">
+  **Symptoms:** Download fails with disk space error
+  
+  **Solutions:**
+  1. Free up disk space (models need 2.5× their size for extraction)
+  2. Use the model cleanup feature to remove unused models
+  3. Choose a smaller model:
+     - Try `base` instead of `large` (save ~2.8GB)
+     - Use Parakeet instead of multiple Whisper models
+</Accordion>
+
+## Model Registry Data
+
+All model metadata is defined in `src/models/modelRegistryData.json`:
+
+```json
+{
+  "whisperModels": {
+    "base": {
+      "name": "Base",
+      "description": "Good balance",
+      "size": "142MB",
+      "sizeMb": 142,
+      "expectedSizeBytes": 148000000,
+      "fileName": "ggml-base.bin",
+      "downloadUrl": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
+      "recommended": true
+    }
+  },
+  "parakeetModels": {
+    "parakeet-tdt-0.6b-v3": {
+      "name": "Parakeet TDT 0.6B",
+      "description": "Fast multilingual ASR with auto language detection (25 languages)",
+      "size": "680MB",
+      "downloadUrl": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2",
+      "extractDir": "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8"
+    }
+  }
+}
+```
+
+<Info>
+  This centralized registry ensures consistency across the app and makes it easy to add new models in the future.
+</Info>

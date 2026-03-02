@@ -1,0 +1,369 @@
+---
+title: "Transcription Modes"
+description: "Choose the right transcription mode for your privacy, speed, and cost requirements"
+---
+
+OpenWhispr offers three transcription modes to balance privacy, speed, cost, and offline capabilities. Choose the mode that best fits your workflow.
+
+## Overview of Modes
+
+<CardGroup cols={3}>
+  <Card title="OpenWhispr Cloud" icon="cloud">
+    Instant transcription with no API keys needed. Free and Pro plans available.
+  </Card>
+  
+  <Card title="BYOK (Bring Your Own Key)" icon="key">
+    Use your own API keys from OpenAI, Groq, or Mistral for full control.
+  </Card>
+  
+  <Card title="Local Processing" icon="shield">
+    Complete privacy — your voice never leaves your device. Works offline.
+  </Card>
+</CardGroup>
+
+## Mode Comparison
+
+| Feature | OpenWhispr Cloud | BYOK | Local Processing |
+|---------|------------------|------|------------------|
+| **Privacy** | ⚠️ Audio sent to cloud | ⚠️ Audio sent to provider | ✅ Audio stays on device |
+| **Speed** | ⚡ Very fast | ⚡ Fast | 🐢 Slower (depends on hardware) |
+| **Cost** | Free tier or $9/mo Pro | Pay per use | Free (after model download) |
+| **Offline** | ❌ Requires internet | ❌ Requires internet | ✅ Works offline |
+| **Setup** | Email/Google sign-in | API key required | Download models (75MB - 3GB) |
+| **Accuracy** | ⭐⭐⭐⭐⭐ Excellent | ⭐⭐⭐⭐⭐ Excellent | ⭐⭐⭐⭐ Very good |
+| **Model Choice** | Pre-selected | Multiple providers | 6 Whisper models + Parakeet |
+
+## OpenWhispr Cloud
+
+<Info>
+  The easiest way to get started — no API keys, no configuration, just sign in and start dictating.
+</Info>
+
+### Features
+
+- **Free Tier**: 2,000 words per week
+- **Pro Tier**: Unlimited transcriptions for $9/month
+- **7-Day Free Trial**: Try Pro features risk-free
+- **Sign-In Options**: Google OAuth or email/password
+- **Managed Infrastructure**: No API key management needed
+
+### When to Use
+
+<CardGroup cols={2}>
+  <Card title="Getting Started" icon="rocket">
+    Perfect for trying OpenWhispr without any setup or configuration.
+  </Card>
+  
+  <Card title="Casual Users" icon="user">
+    Ideal if you dictate occasionally and want a simple experience.
+  </Card>
+  
+  <Card title="High Volume" icon="zap">
+    Pro plan offers unlimited transcriptions for heavy users.
+  </Card>
+  
+  <Card title="Team Usage" icon="users">
+    Share referral links to earn free Pro months for your team.
+  </Card>
+</CardGroup>
+
+### How to Set Up
+
+<Steps>
+  <Step title="Open Settings">
+    Go to **Settings → Transcription**
+  </Step>
+  
+  <Step title="Select OpenWhispr Cloud">
+    Choose the **OpenWhispr Cloud** option (should be selected by default if signed in)
+  </Step>
+  
+  <Step title="Sign In">
+    If not already signed in, click **Sign In** and choose Google or email/password
+  </Step>
+  
+  <Step title="Start Dictating">
+    Your transcriptions are automatically counted toward your weekly quota or Pro plan
+  </Step>
+</Steps>
+
+<Tip>
+  Check your usage at any time in **Settings → Account** to see how many words you've used this week.
+</Tip>
+
+## BYOK (Bring Your Own Key)
+
+Bring Your Own Key mode lets you use your own API keys from supported providers, giving you full control over billing and model selection.
+
+### Supported Providers
+
+<Tabs>
+  <Tab title="OpenAI">
+    **Models Available**:
+    - `gpt-4o-transcribe` — Most accurate
+    - `gpt-4o-mini-transcribe` — Fast and accurate
+    - `whisper-1` — Original Whisper model
+    
+    **Cost**: ~$0.006 per minute
+    
+    **Get API Key**: [OpenAI Platform](https://platform.openai.com/api-keys)
+  </Tab>
+  
+  <Tab title="Groq">
+    **Models Available**:
+    - `whisper-large-v3-turbo` — 216x real-time speed
+    - `whisper-large-v3` — High accuracy
+    
+    **Cost**: Very low (see Groq pricing)
+    
+    **Get API Key**: [Groq Console](https://console.groq.com)
+    
+    <Info>
+      Groq offers extremely fast inference — often transcribing in under 1 second.
+    </Info>
+  </Tab>
+  
+  <Tab title="Mistral">
+    **Models Available**:
+    - `voxtral-mini-latest` — Fast multilingual transcription
+    
+    **Cost**: See Mistral pricing
+    
+    **Get API Key**: [Mistral AI Platform](https://console.mistral.ai/)
+  </Tab>
+  
+  <Tab title="Custom Endpoint">
+    **OpenAI-Compatible APIs**:
+    - Use any API that follows the OpenAI Whisper format
+    - Self-hosted solutions
+    - Alternative providers
+    
+    **Setup**:
+    1. Enter your custom base URL in Settings
+    2. Provide your API key
+    3. Select a compatible model
+  </Tab>
+</Tabs>
+
+### When to Use
+
+<CardGroup cols={2}>
+  <Card title="High Volume" icon="bar-chart">
+    If you transcribe heavily and want to manage your own costs.
+  </Card>
+  
+  <Card title="Enterprise" icon="building">
+    Organizations with existing API contracts or custom endpoints.
+  </Card>
+  
+  <Card title="Speed Priority" icon="zap">
+    Groq's ultra-fast inference is perfect for real-time workflows.
+  </Card>
+  
+  <Card title="Custom Infrastructure" icon="server">
+    You're running your own Whisper API or using alternative providers.
+  </Card>
+</CardGroup>
+
+### How to Set Up
+
+<Steps>
+  <Step title="Get API Key">
+    Sign up for your chosen provider and generate an API key
+  </Step>
+  
+  <Step title="Open Settings">
+    Navigate to **Settings → Transcription**
+  </Step>
+  
+  <Step title="Select BYOK Mode">
+    Choose **Bring Your Own Key (BYOK)** from the mode selector
+  </Step>
+  
+  <Step title="Choose Provider">
+    Select your provider (OpenAI, Groq, Mistral, or Custom)
+  </Step>
+  
+  <Step title="Enter API Key">
+    Paste your API key into the appropriate field
+  </Step>
+  
+  <Step title="Select Model">
+    Choose your preferred model from the dropdown
+  </Step>
+  
+  <Step title="Save">
+    Your settings are saved automatically
+  </Step>
+</Steps>
+
+<Warning>
+  Keep your API keys secure! They are stored locally in your system keychain and never sent to OpenWhispr servers.
+</Warning>
+
+## Local Processing
+
+Local processing keeps your voice data completely private by running speech recognition directly on your device using Whisper or NVIDIA Parakeet models.
+
+### Available Engines
+
+<Tabs>
+  <Tab title="Whisper (whisper.cpp)">
+    **Overview**: OpenAI's Whisper model via high-performance C++ implementation
+    
+    **Models**:
+    - **Tiny** (75MB) — Fastest, lower quality
+    - **Base** (142MB) — ⭐ Recommended balance
+    - **Small** (466MB) — Better quality, slower
+    - **Medium** (1.5GB) — High quality
+    - **Large** (3GB) — Best quality, slowest
+    - **Turbo** (1.6GB) — Fast with good quality
+    
+    **Languages**: 58 languages supported
+    
+    **Hardware**: Runs on CPU (no GPU required)
+  </Tab>
+  
+  <Tab title="NVIDIA Parakeet (sherpa-onnx)">
+    **Overview**: Fast multilingual ASR with INT8 quantization for efficient CPU inference
+    
+    **Models**:
+    - **Parakeet TDT 0.6B** (680MB) — Multilingual (25 languages)
+    
+    **Languages**: 25 European languages including English, Spanish, French, German, Italian, etc.
+    
+    **Hardware**: Optimized for CPU with ONNX runtime
+    
+    **Speed**: Generally faster than Whisper models
+  </Tab>
+</Tabs>
+
+### When to Use
+
+<CardGroup cols={2}>
+  <Card title="Privacy-First" icon="shield-check">
+    Your audio never leaves your device — perfect for sensitive content.
+  </Card>
+  
+  <Card title="Offline Work" icon="wifi-off">
+    Continue dictating without internet connection (flights, remote areas).
+  </Card>
+  
+  <Card title="Cost Savings" icon="dollar-sign">
+    After downloading models, transcription is completely free.
+  </Card>
+  
+  <Card title="Custom Control" icon="sliders">
+    Choose exactly which model and parameters to use.
+  </Card>
+</CardGroup>
+
+### How to Set Up
+
+<Steps>
+  <Step title="Open Settings">
+    Navigate to **Settings → Transcription**
+  </Step>
+  
+  <Step title="Select Local Processing">
+    Toggle **Use Local Processing** to ON
+  </Step>
+  
+  <Step title="Choose Engine">
+    Select **Whisper** or **NVIDIA Parakeet** as your transcription engine
+  </Step>
+  
+  <Step title="Download Model">
+    - For Whisper: Select model size (Base recommended for most users)
+    - For Parakeet: Select Parakeet TDT 0.6B
+    - Click **Download Model** and wait for completion
+  </Step>
+  
+  <Step title="Start Dictating">
+    Your audio is now processed locally on your device
+  </Step>
+</Steps>
+
+### Model Storage
+
+- **macOS/Linux**: `~/.cache/openwhispr/whisper-models/` or `~/.cache/openwhispr/parakeet-models/`
+- **Windows**: `%USERPROFILE%\.cache\openwhispr\whisper-models\` or `parakeet-models\`
+
+You can remove downloaded models in **Settings → Transcription → Local Model Storage → Remove Downloaded Models**.
+
+<Tip>
+  Start with the **Base** Whisper model (142MB) — it offers the best balance of speed and accuracy for most users.
+</Tip>
+
+### Performance Tips
+
+<Accordion title="Choose the Right Model">
+  - **Quick dictation**: Use Tiny or Base
+  - **General use**: Use Base or Small (recommended)
+  - **High accuracy**: Use Medium or Large
+  - **Fast multilingual**: Use Parakeet TDT 0.6B
+</Accordion>
+
+<Accordion title="Hardware Considerations">
+  - Larger models require more RAM (Large needs ~4GB free)
+  - Modern CPUs (2018+) handle Base/Small models well
+  - Older hardware should stick to Tiny or Base
+  - Parakeet is optimized for CPU inference
+</Accordion>
+
+<Accordion title="Processing Time">
+  - Tiny: ~0.1x real-time (10-second audio = 1 second)
+  - Base: ~0.3x real-time (10-second audio = 3 seconds)
+  - Small: ~0.8x real-time (10-second audio = 8 seconds)
+  - Medium/Large: 1-3x real-time (can be slower than audio length)
+  - Parakeet: ~0.2x real-time (very fast)
+</Accordion>
+
+## Switching Between Modes
+
+You can switch modes at any time:
+
+1. Open **Settings → Transcription**
+2. Select your desired mode
+3. Configure any required API keys or download models
+4. Start dictating — the new mode takes effect immediately
+
+<Info>
+  Your mode preference is saved automatically and persists across app restarts.
+</Info>
+
+## Which Mode Should You Choose?
+
+<Steps>
+  <Step title="Start with OpenWhispr Cloud">
+    If you're new to OpenWhispr, begin with the cloud mode — it's the easiest way to get started and includes a generous free tier.
+  </Step>
+  
+  <Step title="Try Local for Privacy">
+    If you handle sensitive information (medical, legal, confidential), switch to local processing for complete privacy.
+  </Step>
+  
+  <Step title="Use BYOK for Control">
+    If you need specific models, custom endpoints, or want to manage your own costs, use BYOK mode.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="AI Processing" icon="sparkles" href="/features/ai-processing">
+    Enhance your transcriptions with AI formatting and cleanup
+  </Card>
+  
+  <Card title="Custom Dictionary" icon="book-open" href="/features/custom-dictionary">
+    Add technical terms and names for better accuracy
+  </Card>
+  
+  <Card title="Notes System" icon="file-text" href="/features/notes-system">
+    Create organized voice notes with transcription
+  </Card>
+  
+  <Card title="Basic Dictation" icon="microphone" href="/features/dictation">
+    Learn the fundamentals of using OpenWhispr
+  </Card>
+</CardGroup>

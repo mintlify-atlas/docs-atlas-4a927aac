@@ -1,0 +1,436 @@
+---
+title: "Architecture"
+description: "Deep dive into OpenWhispr's Electron-based architecture, process separation, and audio pipeline"
+---
+
+OpenWhispr is built on Electron 36 with a privacy-first, dual-window architecture designed for efficient local and cloud speech-to-text transcription.
+
+## Core Technologies
+
+<CardGroup cols={2}>
+  <Card title="Frontend" icon="code">
+    React 19, TypeScript, Tailwind CSS v4, Vite
+  </Card>
+  <Card title="Desktop Framework" icon="window">
+    Electron 36 with context isolation
+  </Card>
+  <Card title="Database" icon="database">
+    better-sqlite3 for local history
+  </Card>
+  <Card title="Speech Processing" icon="microphone">
+    whisper.cpp + NVIDIA Parakeet + OpenAI API
+  </Card>
+</CardGroup>
+
+## Dual Window System
+
+OpenWhispr uses two independent windows for optimal UX:
+
+<Steps>
+  <Step title="Main Window (Dictation Overlay)">
+    Minimal, always-on-top floating panel for recording control
+    - **Draggable**: Positioned anywhere on screen
+    - **Always on top**: Never obscured by other windows
+    - **Frameless**: Minimal chrome for distraction-free use
+    - **Click-through**: Main process handles interactivity via IPC
+  </Step>
+  
+  <Step title="Control Panel Window">
+    Full-featured settings and management interface
+    - **Normal window**: Standard maximize/minimize/close
+    - **Settings UI**: API keys, model selection, hotkeys
+    - **History**: SQLite-backed transcription archive
+    - **Model management**: Download/delete Whisper models
+  </Step>
+</Steps>
+
+<Info>
+Both windows use the **same React codebase** with URL-based routing (`?panel=control` vs. `?panel=main`). This reduces bundle size and maintains consistency.
+</Info>
+
+## Process Architecture
+
+### Main Process (`main.js`)
+
+The Electron main process handles:
+
+- **Window lifecycle**: Create, show, hide, destroy windows
+- **IPC handlers**: 100+ secure channels (see `src/helpers/ipcHandlers.js`)
+- **Database operations**: SQLite reads/writes via better-sqlite3
+- **Native integrations**: Swift (macOS Globe key), C (Windows key listener)
+- **Global hotkeys**: Cross-platform keyboard shortcut registration
+
+**Manager Pattern**: All main process logic is organized into manager classes:
+
+```javascript
+// Initialized in startApp() after app.whenReady()
+const managers = {
+  environment: new EnvironmentManager(),      // .env file management
+  window: new WindowManager(),                // Window creation/positioning
+  database: new DatabaseManager(),            // SQLite operations
+  clipboard: new ClipboardManager(),          // Cross-platform paste
+  whisper: new WhisperManager(),              // Local whisper.cpp
+  parakeet: new ParakeetManager(),            // NVIDIA Parakeet ASR
+  tray: new TrayManager(),                    // System tray icon/menu
+  update: new UpdateManager(),                // Auto-update (electron-updater)
+  hotkey: new HotkeyManager(),                // Global shortcuts
+  globeKey: new GlobeKeyManager(),            // macOS Fn/Globe key
+  windowsKey: new WindowsKeyManager(),        // Windows push-to-talk
+};
+```
+
+### Renderer Process (React)
+
+The renderer runs the UI with **context isolation** enabled:
+
+- **No direct Node.js access**: Security boundary enforced
+- **IPC via contextBridge**: `window.electronAPI` only
+- **Separate Vite build**: Fast HMR during development
+- **Shared components**: shadcn/ui + Radix primitives
+
+### Preload Script (`preload.js`)
+
+Secure bridge between main and renderer:
+
+```javascript
+// Exposes safe IPC methods
+contextBridge.exposeInMainWorld('electronAPI', {
+  // Database
+  saveTranscription: (text) => ipcRenderer.invoke('db-save-transcription', text),
+  getTranscriptions: (limit) => ipcRenderer.invoke('db-get-transcriptions', limit),
+  
+  // Whisper
+  transcribeLocalWhisper: (audioBlob, options) => 
+    ipcRenderer.invoke('transcribe-local-whisper', audioBlob, options),
+  downloadWhisperModel: (modelName) => 
+    ipcRenderer.invoke('download-whisper-model', modelName),
+  
+  // Event listeners (with cleanup)
+  onToggleDictation: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('toggle-dictation', listener);
+    return () => ipcRenderer.removeListener('toggle-dictation', listener);
+  },
+});
+```
+
+<Warning>
+Never expose `ipcRenderer` directly. Always use `invoke()` for async calls and register listeners with cleanup functions to prevent memory leaks.
+</Warning>
+
+## Audio Pipeline
+
+The complete flow from microphone to text:
+
+<Steps>
+  <Step title="Recording (Renderer)">
+    **MediaRecorder API** captures audio in WebM format
+    ```javascript
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    recorder.ondataavailable = (e) => chunks.push(e.data);
+    ```
+  </Step>
+  
+  <Step title="Blob Creation (Renderer)">
+    When recording stops, chunks are combined into a Blob:
+    ```javascript
+    const blob = new Blob(chunks, { type: 'audio/webm' });
+    const arrayBuffer = await blob.arrayBuffer();
+    ```
+  </Step>
+  
+  <Step title="IPC Transfer (Renderer → Main)">
+    ArrayBuffer is sent via IPC (max 10MB):
+    ```javascript
+    const result = await window.electronAPI.transcribeLocalWhisper(
+      arrayBuffer,
+      { model: 'base', language: 'en' }
+    );
+    ```
+  </Step>
+  
+  <Step title="Temporary File (Main)">
+    Main process writes to temp directory:
+    ```javascript
+    const tempFile = path.join(tmpdir(), `whisper-${Date.now()}.webm`);
+    fs.writeFileSync(tempFile, Buffer.from(arrayBuffer));
+    ```
+  </Step>
+  
+  <Step title="FFmpeg Conversion (Main)">
+    **ffmpeg-static** converts WebM → WAV (16kHz mono):
+    ```bash
+    ffmpeg -i input.webm -ar 16000 -ac 1 -f wav output.wav
+    ```
+    <Info>FFmpeg is bundled and unpacked from ASAR to `app.asar.unpacked/node_modules/ffmpeg-static/`</Info>
+  </Step>
+  
+  <Step title="whisper.cpp Transcription (Main)">
+    Native binary processes WAV file:
+    ```bash
+    ./whisper-cpp -m models/ggml-base.bin -f audio.wav -l en
+    ```
+    Output is parsed from stdout and returned via IPC.
+  </Step>
+  
+  <Step title="Cleanup (Main)">
+    Temporary files are deleted:
+    ```javascript
+    fs.unlinkSync(tempFile);
+    fs.unlinkSync(wavFile);
+    ```
+  </Step>
+  
+  <Step title="Display (Renderer)">
+    Transcription text is shown and optionally pasted at cursor.
+  </Step>
+</Steps>
+
+<Note>
+**Performance**: The entire pipeline completes in 1-5 seconds for 30-second recordings using the `base` model.
+</Note>
+
+## Database Schema
+
+SQLite database at `~/.config/OpenWhispr/transcriptions.db` (Linux/macOS) or `%APPDATA%/OpenWhispr/transcriptions.db` (Windows):
+
+```sql
+CREATE TABLE transcriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  original_text TEXT NOT NULL,
+  processed_text TEXT,
+  is_processed BOOLEAN DEFAULT 0,
+  processing_method TEXT DEFAULT 'none',
+  agent_name TEXT,
+  error TEXT
+);
+
+CREATE INDEX idx_timestamp ON transcriptions(timestamp DESC);
+```
+
+**Key features**:
+- **Automatic timestamps**: No manual date handling
+- **AI processing tracking**: `is_processed`, `processing_method`, `agent_name`
+- **Error logging**: Failed transcriptions stored with error messages
+
+## Native Integrations
+
+### macOS Globe Key Listener
+
+**File**: `resources/globe-listener.swift`
+
+```swift
+// Detects Fn/Globe key presses using IOKit
+let eventMask = (1 << kCGEventFlagsChanged)
+let eventTap = CGEvent.tapCreate(
+  tap: .cgSessionEventTap,
+  place: .headInsertEventTap,
+  options: .defaultTap,
+  eventsOfInterest: CGEventMask(eventMask),
+  callback: eventCallback,
+  userInfo: nil
+)
+```
+
+**Compiled at build**: `scripts/build-globe-listener.js`
+
+<Info>
+Requires Xcode Command Line Tools (`xcode-select --install`) to compile Swift source.
+</Info>
+
+### Windows Push-to-Talk Listener
+
+**File**: `resources/windows-key-listener.c`
+
+```c
+// Low-level keyboard hook for compound hotkeys
+HHOOK hook = SetWindowsHookEx(
+  WH_KEYBOARD_LL,
+  KeyboardProc,
+  NULL,
+  0
+);
+
+LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
+  if (wParam == WM_KEYDOWN) {
+    printf("KEY_DOWN\n");
+    fflush(stdout);
+  }
+  return CallNextHookEx(NULL, nCode, wParam, lParam);
+}
+```
+
+**Distribution**: Prebuilt binary downloaded from GitHub releases
+
+### Linux Fast Paste (X11/Wayland)
+
+**File**: `resources/linux-fast-paste.c`
+
+```c
+// XTest extension for X11
+XTestFakeKeyEvent(display, XKeysymToKeycode(display, XK_Control_L), True, 0);
+XTestFakeKeyEvent(display, XKeysymToKeycode(display, XK_v), True, 0);
+XTestFakeKeyEvent(display, XKeysymToKeycode(display, XK_v), False, 0);
+XTestFakeKeyEvent(display, XKeysymToKeycode(display, XK_Control_L), False, 0);
+XFlush(display);
+```
+
+**Fallback chain**: native binary → wtype → ydotool → xdotool → manual paste
+
+## IPC Communication Patterns
+
+### Invoke (Request/Response)
+
+For operations returning data:
+
+```typescript
+// Renderer
+const result = await window.electronAPI.getTranscriptions(100);
+
+// Main (ipcHandlers.js)
+ipcMain.handle('db-get-transcriptions', async (event, limit) => {
+  return databaseManager.getTranscriptions(limit);
+});
+```
+
+### Send (Fire-and-Forget)
+
+For notifications:
+
+```typescript
+// Renderer
+window.electronAPI.notifyActivationModeChanged('push');
+
+// Main
+ipcMain.on('activation-mode-changed', (event, mode) => {
+  windowManager.setActivationModeCache(mode);
+});
+```
+
+### Events (Main → Renderer)
+
+For real-time updates:
+
+```typescript
+// Renderer (with cleanup)
+const cleanup = window.electronAPI.onUpdateAvailable((info) => {
+  console.log('Update available:', info.version);
+});
+
+// Main
+windowManager.controlPanelWindow.webContents.send('update-available', {
+  version: '1.5.5',
+  releaseNotes: '...',
+});
+```
+
+<Warning>
+**Memory leaks**: Always return cleanup functions from event listeners and call them in React's `useEffect` cleanup.
+</Warning>
+
+## Platform-Specific Considerations
+
+<Tabs>
+  <Tab title="macOS">
+    - **Accessibility permissions**: Required for AppleScript-based paste
+    - **Microphone permission**: System dialog on first use
+    - **Notarization**: Required for distribution (Apple Developer account)
+    - **Universal binary**: Supports both arm64 (M1/M2/M3) and x64 (Intel)
+    - **Dock behavior**: `LSUIElement: false` shows app in dock with indicator dot
+  </Tab>
+  
+  <Tab title="Windows">
+    - **No special permissions**: Push-to-talk works without admin rights
+    - **NSIS installer**: Creates Start Menu shortcuts and uninstaller
+    - **Code signing**: Optional but recommended (prevents SmartScreen warnings)
+    - **App ID**: `com.herotools.openwispr` (groups all windows in taskbar)
+    - **Paste tools**: Native `windows-fast-paste.exe` → PowerShell SendKeys → nircmd.exe
+  </Tab>
+  
+  <Tab title="Linux">
+    - **Multiple package formats**: AppImage, .deb, .rpm, .tar.gz, Flatpak
+    - **GNOME Wayland**: Native D-Bus shortcuts (tap-to-talk only)
+    - **X11**: Standard global shortcuts + xdotool paste
+    - **Wayland (non-GNOME)**: wtype or ydotool for paste
+    - **Permissions**: No special permissions required
+  </Tab>
+</Tabs>
+
+## Build Process
+
+The build pipeline combines Vite (frontend) and electron-builder (packaging):
+
+```bash
+# 1. Compile native binaries
+npm run compile:native  # Swift, C sources
+
+# 2. Download runtime binaries
+npm run download:whisper-cpp
+npm run download:llama-server
+npm run download:sherpa-onnx
+
+# 3. Build React app
+cd src && vite build  # → src/dist/
+
+# 4. Package with electron-builder
+electron-builder --mac  # or --win, --linux
+```
+
+<Accordion title="Production optimizations">
+  - **ASAR archive**: Main process code packed into `app.asar`
+  - **ASAR unpacking**: FFmpeg and better-sqlite3 extracted for native access
+  - **Code signing**: macOS requires Apple Developer certificate
+  - **Notarization**: Automated via `@electron/notarize`
+  - **Update server**: GitHub Releases as update provider
+</Accordion>
+
+## Performance Characteristics
+
+- **Startup time**: 1-2 seconds (cold), less than 500ms (warm)
+- **Memory footprint**: 150-300 MB (varies by model size)
+- **Transcription speed**: 0.5-5x realtime (model-dependent)
+- **IPC overhead**: less than 10ms for typical operations
+- **Database queries**: less than 5ms for history fetch (100 records)
+
+<Note>
+Local transcription with the `base` model achieves near real-time performance on M1 Macs and modern Intel/AMD CPUs.
+</Note>
+
+## Security Model
+
+<Steps>
+  <Step title="Context Isolation">
+    Renderer has no direct Node.js/Electron API access
+  </Step>
+  <Step title="Preload Script">
+    Only whitelisted IPC channels exposed via `contextBridge`
+  </Step>
+  <Step title="Input Validation">
+    All IPC handlers validate parameters before processing
+  </Step>
+  <Step title="File System Sandboxing">
+    Temp files use system temp directory with random filenames
+  </Step>
+  <Step title="API Key Storage">
+    Keys stored in `.env` file with restrictive permissions (600)
+  </Step>
+  <Step title="No Remote Code">
+    All code bundled at build time; no runtime downloads
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Model Registry" icon="database" href="/advanced/model-registry">
+    Learn how AI models are managed and downloaded
+  </Card>
+  <Card title="Building from Source" icon="code" href="/advanced/building-from-source">
+    Compile OpenWhispr for your platform
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+    Debug common issues and errors
+  </Card>
+</CardGroup>

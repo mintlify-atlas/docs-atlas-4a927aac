@@ -1,0 +1,304 @@
+---
+title: Whisper Models
+description: Local speech-to-text models powered by whisper.cpp with GGML quantization
+---
+
+## Overview
+
+OpenWhispr supports local transcription using OpenAI's Whisper models via whisper.cpp. These models run entirely on your device for maximum privacy.
+
+## Model Characteristics
+
+All Whisper models use GGML quantization for efficient CPU/GPU inference. The models follow a **speed vs quality tradeoff**:
+
+- **Smaller models** (Tiny, Base): Faster transcription, lower accuracy
+- **Larger models** (Large, Turbo): Slower transcription, higher accuracy
+- **Recommended**: Base model for balanced performance
+
+## Storage Location
+
+Models are cached locally at:
+
+```
+~/.cache/openwhispr/whisper-models/
+```
+
+## Available Models
+
+### Tiny (75MB)
+
+<ParamField path="fileName" type="string">
+  `ggml-tiny.bin`
+</ParamField>
+
+<ParamField path="size" type="string">
+  75MB (expected: 78,000,000 bytes)
+</ParamField>
+
+<ParamField path="downloadUrl" type="string">
+  `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin`
+</ParamField>
+
+<ParamField path="description" type="string">
+  Fastest, lower quality. Best for quick transcription when accuracy is not critical.
+</ParamField>
+
+---
+
+### Base (142MB) — Recommended
+
+<ParamField path="fileName" type="string">
+  `ggml-base.bin`
+</ParamField>
+
+<ParamField path="size" type="string">
+  142MB (expected: 148,000,000 bytes)
+</ParamField>
+
+<ParamField path="downloadUrl" type="string">
+  `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin`
+</ParamField>
+
+<ParamField path="description" type="string">
+  Good balance between speed and quality. **Recommended for most users.**
+</ParamField>
+
+<ParamField path="recommended" type="boolean">
+  `true`
+</ParamField>
+
+---
+
+### Small (466MB)
+
+<ParamField path="fileName" type="string">
+  `ggml-small.bin`
+</ParamField>
+
+<ParamField path="size" type="string">
+  466MB (expected: 488,000,000 bytes)
+</ParamField>
+
+<ParamField path="downloadUrl" type="string">
+  `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin`
+</ParamField>
+
+<ParamField path="description" type="string">
+  Better quality, slower. Good for when accuracy matters more than speed.
+</ParamField>
+
+---
+
+### Medium (1.5GB)
+
+<ParamField path="fileName" type="string">
+  `ggml-medium.bin`
+</ParamField>
+
+<ParamField path="size" type="string">
+  1.5GB (expected: 1,570,000,000 bytes)
+</ParamField>
+
+<ParamField path="downloadUrl" type="string">
+  `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin`
+</ParamField>
+
+<ParamField path="description" type="string">
+  High quality transcription. Requires more processing time and disk space.
+</ParamField>
+
+---
+
+### Large (3GB)
+
+<ParamField path="fileName" type="string">
+  `ggml-large-v3.bin`
+</ParamField>
+
+<ParamField path="size" type="string">
+  3GB (expected: 3,140,000,000 bytes)
+</ParamField>
+
+<ParamField path="downloadUrl" type="string">
+  `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin`
+</ParamField>
+
+<ParamField path="description" type="string">
+  Best quality, slowest. Use when maximum accuracy is required.
+</ParamField>
+
+---
+
+### Turbo (1.6GB)
+
+<ParamField path="fileName" type="string">
+  `ggml-large-v3-turbo.bin`
+</ParamField>
+
+<ParamField path="size" type="string">
+  1.6GB (expected: 1,670,000,000 bytes)
+</ParamField>
+
+<ParamField path="downloadUrl" type="string">
+  `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin`
+</ParamField>
+
+<ParamField path="description" type="string">
+  Fast with good quality. Optimized version of Large model with better speed.
+</ParamField>
+
+## Downloading Models
+
+### Via UI
+
+Models can be downloaded from **Settings → Models → Whisper Models**.
+
+### Programmatically
+
+<CodeGroup>
+```javascript Electron Renderer
+// Download a model with progress callback
+const result = await window.api.downloadModel('base', (progress) => {
+  console.log(`Progress: ${progress.percentage}%`);
+  console.log(`Downloaded: ${progress.downloaded_bytes} / ${progress.total_bytes}`);
+});
+
+if (result.success) {
+  console.log(`Model downloaded to: ${result.path}`);
+  console.log(`Size: ${result.size_mb}MB`);
+}
+```
+
+```javascript Main Process
+const whisperManager = new WhisperManager();
+
+await whisperManager.downloadWhisperModel('base', (progress) => {
+  if (progress.type === 'progress') {
+    console.log(`${progress.percentage}%`);
+  } else if (progress.type === 'complete') {
+    console.log('Download complete!');
+  }
+});
+```
+</CodeGroup>
+
+## Checking Model Status
+
+<CodeGroup>
+```javascript Electron Renderer
+const status = await window.api.checkModelStatus('base');
+
+if (status.downloaded) {
+  console.log(`Model path: ${status.path}`);
+  console.log(`Size: ${status.size_mb}MB`);
+} else {
+  console.log('Model not downloaded');
+}
+```
+
+```javascript Main Process
+const whisperManager = new WhisperManager();
+const status = await whisperManager.checkModelStatus('base');
+
+console.log(`Downloaded: ${status.downloaded}`);
+console.log(`Path: ${status.path}`);
+```
+</CodeGroup>
+
+## Listing All Models
+
+```javascript
+const { models, cache_dir } = await window.api.listWhisperModels();
+
+models.forEach(model => {
+  console.log(`${model.model}: ${model.downloaded ? model.size_mb + 'MB' : 'Not downloaded'}`);
+});
+
+console.log(`Cache directory: ${cache_dir}`);
+```
+
+## Deleting Models
+
+<CodeGroup>
+```javascript Delete Single Model
+const result = await window.api.deleteWhisperModel('tiny');
+
+if (result.deleted) {
+  console.log(`Freed ${result.freed_mb}MB of disk space`);
+}
+```
+
+```javascript Delete All Models
+const result = await window.api.deleteAllWhisperModels();
+
+console.log(`Deleted ${result.deleted_count} models`);
+console.log(`Freed ${result.freed_mb}MB of disk space`);
+```
+</CodeGroup>
+
+## Transcription
+
+```javascript
+const audioBlob = /* ArrayBuffer from MediaRecorder */;
+
+const result = await window.api.transcribeLocalWhisper(audioBlob, {
+  model: 'base',
+  language: 'en', // or 'auto'
+  initialPrompt: 'Custom dictionary words here'
+});
+
+if (result.success) {
+  console.log(`Transcribed text: ${result.text}`);
+} else {
+  console.error(`Error: ${result.message}`);
+}
+```
+
+<Info>
+Whisper models support **58 languages** including English, Spanish, French, German, Chinese, Japanese, and more. Use `auto` for automatic language detection.
+</Info>
+
+## Model Selection Guide
+
+<Accordion title="When to use each model">
+  - **Tiny**: Testing, low-resource devices, real-time feedback needed
+  - **Base**: Default choice for most users, good balance
+  - **Small**: When accuracy is important but Large is too slow
+  - **Medium**: Professional use, technical content, medical dictation
+  - **Large**: Maximum accuracy, critical transcription tasks
+  - **Turbo**: Need Large-quality speed without full Large model slowdown
+</Accordion>
+
+<Note>
+All models are downloaded from HuggingFace's official whisper.cpp repository. File integrity is validated after download using expected file sizes.
+</Note>
+
+## Custom Dictionary
+
+Improve transcription accuracy for specific words by passing them in the `initialPrompt` parameter:
+
+```javascript
+const customWords = ['OpenWhispr', 'whisper.cpp', 'GGML'];
+
+const result = await window.api.transcribeLocalWhisper(audioBlob, {
+  model: 'base',
+  initialPrompt: customWords.join(' ')
+});
+```
+
+## Server Pre-warming
+
+OpenWhispr pre-warms the whisper-server process on startup to eliminate 2-5s cold-start delays:
+
+```javascript
+// Main process - automatic on startup
+await whisperManager.initializeAtStartup({
+  localTranscriptionProvider: 'whisper',
+  whisperModel: 'base',
+  useCuda: false
+});
+```
+
+<Info>
+The server remains running in the background after the first transcription, providing instant transcription for subsequent recordings.
+</Info>

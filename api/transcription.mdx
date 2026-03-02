@@ -1,0 +1,355 @@
+---
+title: Transcription API
+description: Audio transcription methods using local Whisper, Parakeet, or cloud APIs
+---
+
+## Local Transcription (Whisper)
+
+### window.electronAPI.transcribeLocalWhisper()
+
+Transcribe audio using a locally-installed Whisper model.
+
+<ParamField path="audioBlob" type="ArrayBuffer" required>
+  Audio data as an ArrayBuffer. Typically obtained from a Blob:
+  ```javascript
+  const arrayBuffer = await audioBlob.arrayBuffer();
+  ```
+</ParamField>
+
+<ParamField path="options" type="object">
+  <Expandable title="options">
+    <ParamField path="model" type="string" default="base">
+      Whisper model to use: `tiny`, `base`, `small`, `medium`, `large`, `turbo`
+    </ParamField>
+    
+    <ParamField path="language" type="string">
+      Language code (e.g., `en`, `es`, `fr`). If omitted, auto-detects language.
+    </ParamField>
+    
+    <ParamField path="initialPrompt" type="string">
+      Prompt to guide transcription. Useful for custom vocabulary (names, technical terms).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether transcription succeeded
+</ResponseField>
+
+<ResponseField name="text" type="string">
+  Transcribed text
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message if `success` is false
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Additional info (e.g., "No audio detected")
+</ResponseField>
+
+#### Example
+
+<CodeGroup>
+
+```javascript Basic Usage
+const audioBlob = await recorder.stop(); // From MediaRecorder
+const arrayBuffer = await audioBlob.arrayBuffer();
+
+const result = await window.electronAPI.transcribeLocalWhisper(arrayBuffer, {
+  model: "base",
+  language: "en"
+});
+
+if (result.success) {
+  console.log("Transcription:", result.text);
+} else {
+  console.error("Error:", result.error);
+}
+```
+
+```javascript With Custom Dictionary
+const customWords = ["OpenWhispr", "API", "IPC"];
+
+const result = await window.electronAPI.transcribeLocalWhisper(arrayBuffer, {
+  model: "base",
+  initialPrompt: customWords.join(", ")
+});
+```
+
+</CodeGroup>
+
+<Note>
+  **No Audio Detected**: If the audio is too short or silent, the API returns `success: false` with `message: "No audio detected"`. Listen for the `onNoAudioDetected` event to handle this in the UI.
+</Note>
+
+---
+
+## Local Transcription (Parakeet)
+
+### window.electronAPI.transcribeLocalParakeet()
+
+Transcribe audio using NVIDIA's Parakeet model via sherpa-onnx.
+
+<ParamField path="audioBlob" type="ArrayBuffer" required>
+  Audio data as an ArrayBuffer
+</ParamField>
+
+<ParamField path="options" type="object">
+  <Expandable title="options">
+    <ParamField path="model" type="string" default="parakeet-tdt-0.6b-v3">
+      Parakeet model identifier
+    </ParamField>
+    
+    <ParamField path="language" type="string">
+      Language code. Parakeet supports 25 languages.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether transcription succeeded
+</ResponseField>
+
+<ResponseField name="text" type="string">
+  Transcribed text
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message if failed
+</ResponseField>
+
+#### Example
+
+```javascript
+const result = await window.electronAPI.transcribeLocalParakeet(arrayBuffer, {
+  model: "parakeet-tdt-0.6b-v3",
+  language: "en"
+});
+
+if (result.success) {
+  console.log("Parakeet transcription:", result.text);
+}
+```
+
+---
+
+## Cloud Transcription
+
+### window.electronAPI.cloudTranscribe()
+
+Transcribe audio using the OpenWhispr Cloud API (requires authentication).
+
+<ParamField path="audioBuffer" type="ArrayBuffer" required>
+  Audio data as an ArrayBuffer
+</ParamField>
+
+<ParamField path="opts" type="object">
+  <Expandable title="opts">
+    <ParamField path="language" type="string">
+      Language code for transcription
+    </ParamField>
+    
+    <ParamField path="prompt" type="string">
+      Custom vocabulary prompt for better accuracy
+    </ParamField>
+    
+    <ParamField path="sendLogs" type="string">
+      Whether to send logs to cloud ("true" or "false")
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether transcription succeeded
+</ResponseField>
+
+<ResponseField name="text" type="string">
+  Transcribed text
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message if failed
+</ResponseField>
+
+<ResponseField name="code" type="string">
+  Error code (e.g., "AUTH_EXPIRED", "OFFLINE")
+</ResponseField>
+
+<ResponseField name="limitReached" type="boolean">
+  Whether usage limit was reached
+</ResponseField>
+
+<ResponseField name="wordsUsed" type="number">
+  Total words used in current period
+</ResponseField>
+
+<ResponseField name="wordsRemaining" type="number">
+  Words remaining in current period
+</ResponseField>
+
+#### Example
+
+```javascript
+const result = await window.electronAPI.cloudTranscribe(arrayBuffer, {
+  language: "en",
+  prompt: "OpenWhispr, API, transcription"
+});
+
+if (result.success) {
+  console.log("Transcription:", result.text);
+  console.log("Words remaining:", result.wordsRemaining);
+} else if (result.code === "AUTH_EXPIRED") {
+  // Redirect to login
+}
+```
+
+---
+
+## Audio File Transcription
+
+### window.electronAPI.transcribeAudioFile()
+
+Transcribe an audio file from disk using local models.
+
+<ParamField path="filePath" type="string" required>
+  Absolute path to the audio file
+</ParamField>
+
+<ParamField path="options" type="object">
+  <Expandable title="options">
+    <ParamField path="provider" type="string">
+      Transcription provider: `"whisper"` or `"nvidia"` (Parakeet)
+    </ParamField>
+    
+    <ParamField path="model" type="string">
+      Model name (depends on provider)
+    </ParamField>
+    
+    <ParamField path="language" type="string">
+      Language code for transcription
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="success" type="boolean">
+  Whether transcription succeeded
+</ResponseField>
+
+<ResponseField name="text" type="string">
+  Transcribed text
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message if failed
+</ResponseField>
+
+#### Example
+
+```javascript
+const { filePath } = await window.electronAPI.selectAudioFile();
+
+if (!filePath) return; // User cancelled
+
+const result = await window.electronAPI.transcribeAudioFile(filePath, {
+  provider: "whisper",
+  model: "base",
+  language: "en"
+});
+
+if (result.success) {
+  console.log("File transcription:", result.text);
+}
+```
+
+---
+
+## Audio File Selection
+
+### window.electronAPI.selectAudioFile()
+
+Open a file picker to select an audio file.
+
+<ResponseField name="canceled" type="boolean">
+  Whether the user cancelled the dialog
+</ResponseField>
+
+<ResponseField name="filePath" type="string">
+  Path to the selected audio file (if not cancelled)
+</ResponseField>
+
+#### Supported Formats
+
+- MP3 (`.mp3`)
+- WAV (`.wav`)
+- M4A (`.m4a`)
+- WebM (`.webm`)
+- OGG (`.ogg`)
+- FLAC (`.flac`)
+- AAC (`.aac`)
+
+#### Example
+
+```javascript
+const { canceled, filePath } = await window.electronAPI.selectAudioFile();
+
+if (!canceled) {
+  const size = await window.electronAPI.getFileSize(filePath);
+  console.log(`Selected file: ${filePath} (${size} bytes)`);
+}
+```
+
+---
+
+## Transcription Events
+
+### window.electronAPI.onNoAudioDetected()
+
+Listen for "no audio detected" events during recording.
+
+```javascript
+const cleanup = window.electronAPI.onNoAudioDetected(() => {
+  showToast("No audio detected. Try speaking louder or check your microphone.");
+});
+
+// Clean up listener when component unmounts
+cleanup();
+```
+
+---
+
+## Installation Checks
+
+### window.electronAPI.checkWhisperInstallation()
+
+Check if Whisper binaries are available.
+
+<ResponseField name="installed" type="boolean">
+  Whether Whisper is installed
+</ResponseField>
+
+<ResponseField name="path" type="string">
+  Path to the Whisper binary
+</ResponseField>
+
+#### Example
+
+```javascript
+const status = await window.electronAPI.checkWhisperInstallation();
+
+if (!status.installed) {
+  console.log("Whisper not found. Please download models.");
+}
+```
+
+### window.electronAPI.checkParakeetInstallation()
+
+Check if Parakeet (sherpa-onnx) binaries are available.
+
+<ResponseField name="installed" type="boolean">
+  Whether Parakeet is installed
+</ResponseField>
+
+<ResponseField name="path" type="string">
+  Path to the sherpa-onnx binary
+</ResponseField>

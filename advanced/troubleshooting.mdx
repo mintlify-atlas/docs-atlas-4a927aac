@@ -1,0 +1,709 @@
+---
+title: "Troubleshooting"
+description: "Debug and resolve common issues with OpenWhispr, from microphone permissions to transcription failures"
+---
+
+This guide covers common issues and their solutions, organized by category.
+
+## Microphone Issues
+
+### Microphone Not Detected
+
+<Steps>
+  <Step title="Check system permissions">
+    <Tabs>
+      <Tab title="macOS">
+        1. Open **System Settings** → **Privacy & Security** → **Microphone**
+        2. Ensure **OpenWhispr** is checked
+        3. If not listed, click the lock icon and add OpenWhispr manually
+        4. Restart OpenWhispr
+      </Tab>
+      
+      <Tab title="Windows">
+        1. Open **Settings** → **Privacy** → **Microphone**
+        2. Enable "Allow apps to access your microphone"
+        3. Scroll down and enable for desktop apps
+        4. Restart OpenWhispr
+      </Tab>
+      
+      <Tab title="Linux">
+        Check PulseAudio/PipeWire permissions:
+        ```bash
+        # List audio devices
+        pactl list sources
+        
+        # If using PipeWire
+        pw-cli ls Node
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  
+  <Step title="Test microphone in browser">
+    Navigate to `https://webcammictest.com/check-mic.html` and verify your microphone works in Chrome/Edge.
+    
+    If it doesn't work in browser, the issue is system-level (not OpenWhispr-specific).
+  </Step>
+  
+  <Step title="Check FFmpeg availability">
+    Open DevTools (Cmd/Ctrl+Shift+I) in Control Panel and run:
+    ```javascript
+    await window.electronAPI.checkFFmpegAvailability()
+    ```
+    
+    Expected output:
+    ```json
+    {
+      "available": true,
+      "path": "/path/to/ffmpeg",
+      "version": "6.0"
+    }
+    ```
+  </Step>
+  
+  <Step title="Enable debug logging">
+    1. Open Control Panel → Settings → Advanced
+    2. Enable "Debug Logging"
+    3. Try recording again
+    4. Click "Open Logs Folder" and check `main.log` for errors
+  </Step>
+</Steps>
+
+<Warning>
+**Common issue**: Browser-based microphone access requires HTTPS or localhost. Electron uses localhost in development, so this should not be a problem.
+</Warning>
+
+### No Audio Detected
+
+<Accordion title="Symptom: Recording completes but 'No audio detected' error">
+  **Possible causes**:
+  1. **Microphone muted**: Check system volume mixer
+  2. **Wrong input device**: Select correct device in System Settings → Sound
+  3. **Extremely quiet audio**: Increase microphone gain
+  4. **FFmpeg conversion failure**: Audio didn't convert to WAV properly
+  
+  **Debug**:
+  ```bash
+  # Enable debug logging and check for FFmpeg errors:
+  # Look for lines like:
+  # [audioManager] FFmpeg conversion failed: ...
+  # [audioManager] Audio level: 0.00 (too quiet)
+  ```
+  
+  **Fix**:
+  - Increase microphone input volume
+  - Test with `ffmpeg -f avfoundation -i ":0" -t 5 test.wav` (macOS)
+  - Test with `ffmpeg -f dshow -i audio="Microphone" -t 5 test.wav` (Windows)
+</Accordion>
+
+<Accordion title="Symptom: 'MediaRecorder not supported' error">
+  **Cause**: Browser/Electron version too old or missing codecs
+  
+  **Fix**:
+  1. Update OpenWhispr to latest version (includes latest Electron)
+  2. Verify Electron version:
+     ```javascript
+     console.log(process.versions.electron); // Should be 36.9.5+
+     ```
+  3. Check supported MIME types:
+     ```javascript
+     MediaRecorder.isTypeSupported('audio/webm'); // Should be true
+     ```
+</Accordion>
+
+## Transcription Failures
+
+### Local Whisper Transcription Fails
+
+<Steps>
+  <Step title="Verify whisper.cpp binary">
+    ```bash
+    # Check if binary exists
+    ls -la resources/bin/whisper-cpp-*
+    
+    # On macOS, check for ARM vs Intel
+    file resources/bin/whisper-cpp-darwin-arm64
+    # Output: Mach-O 64-bit executable arm64
+    
+    # Test binary directly
+    ./resources/bin/whisper-cpp-darwin-arm64 --help
+    ```
+    
+    If binary is missing:
+    ```bash
+    npm run download:whisper-cpp
+    ```
+  </Step>
+  
+  <Step title="Check model download">
+    ```bash
+    # List downloaded models
+    ls -lh ~/.cache/openwhispr/whisper-models/
+    
+    # Verify file size matches expectedSizeBytes
+    stat -f%z ~/.cache/openwhispr/whisper-models/ggml-base.bin
+    # Should output: 148000000 (148 MB)
+    ```
+    
+    If model is missing or corrupted:
+    ```bash
+    # Delete and re-download
+    rm ~/.cache/openwhispr/whisper-models/ggml-base.bin
+    # Then download via Control Panel → Models
+    ```
+  </Step>
+  
+  <Step title="Test whisper.cpp manually">
+    ```bash
+    # Create test audio
+    ffmpeg -f lavfi -i "sine=frequency=1000:duration=5" -ar 16000 test.wav
+    
+    # Run whisper
+    ./resources/bin/whisper-cpp-darwin-arm64 \
+      -m ~/.cache/openwhispr/whisper-models/ggml-base.bin \
+      -f test.wav \
+      -l en
+    
+    # Should output transcription or error message
+    ```
+  </Step>
+  
+  <Step title="Check debug logs">
+    Look for errors like:
+    - `whisper.cpp: error loading model`
+    - `whisper.cpp: failed to decode audio`
+    - `FFmpeg conversion failed`
+    
+    Common fixes:
+    - Re-download model
+    - Verify FFmpeg is working
+    - Check disk space (models are 75MB-3GB)
+  </Step>
+</Steps>
+
+### Cloud Transcription Fails
+
+<Accordion title="OpenAI API Key Invalid">
+  **Error**: `Invalid API key` or `401 Unauthorized`
+  
+  **Fix**:
+  1. Verify API key at https://platform.openai.com/api-keys
+  2. Check API key format: `sk-proj-...` (new format) or `sk-...` (legacy)
+  3. Ensure billing is active (https://platform.openai.com/account/billing)
+  4. Re-save key in Control Panel → Settings → API Keys
+  
+  **Test key manually**:
+  ```bash
+  curl https://api.openai.com/v1/models \
+    -H "Authorization: Bearer YOUR_API_KEY"
+  
+  # Should return list of models, not error
+  ```
+</Accordion>
+
+<Accordion title="Rate Limit Exceeded">
+  **Error**: `429 Too Many Requests`
+  
+  **Cause**: OpenAI free tier limits or quota exhausted
+  
+  **Fix**:
+  1. Wait 60 seconds and retry
+  2. Upgrade OpenAI plan: https://platform.openai.com/account/billing/overview
+  3. Switch to local transcription (no rate limits)
+  
+  **Check quota**:
+  ```bash
+  curl https://api.openai.com/v1/usage \
+    -H "Authorization: Bearer YOUR_API_KEY"
+  ```
+</Accordion>
+
+<Accordion title="Network / Proxy Issues">
+  **Symptom**: `ECONNREFUSED`, `ETIMEDOUT`, or `Network error`
+  
+  **Debug**:
+  1. Test internet connectivity:
+     ```bash
+     curl -I https://api.openai.com
+     # Should return HTTP 200 or 301
+     ```
+  2. Check corporate firewall/proxy settings
+  3. Try with VPN disabled (some VPNs block OpenAI)
+  
+  **Proxy configuration**:
+  ```bash
+  # Set proxy in environment
+  export HTTP_PROXY=http://proxy.example.com:8080
+  export HTTPS_PROXY=http://proxy.example.com:8080
+  
+  # Then restart OpenWhispr
+  ```
+</Accordion>
+
+## Clipboard / Pasting Issues
+
+### macOS: Text Not Pasting
+
+<Steps>
+  <Step title="Grant accessibility permissions">
+    1. Open **System Settings** → **Privacy & Security** → **Accessibility**
+    2. Enable **OpenWhispr**
+    3. If not listed, click `+` and add OpenWhispr
+    4. Restart OpenWhispr
+    
+    <Info>
+    Accessibility permission is **required** for AppleScript-based auto-paste to work.
+    </Info>
+  </Step>
+  
+  <Step title="Test clipboard manually">
+    1. Record a short dictation
+    2. Open TextEdit or any text field
+    3. Press Cmd+V
+    
+    If text pastes manually but not automatically, it's a permission issue.
+  </Step>
+  
+  <Step title="Check debug logs">
+    Look for:
+    ```
+    [clipboard] Accessibility permission denied
+    [clipboard] AppleScript paste failed: ...
+    ```
+    
+    If you see "permission denied", re-check System Settings.
+  </Step>
+</Steps>
+
+### Windows: Text Not Pasting
+
+<Accordion title="PowerShell execution policy">
+  **Symptom**: Paste fails silently
+  
+  **Cause**: PowerShell execution policy blocks `SendKeys`
+  
+  **Fix**:
+  ```powershell
+  # Check current policy
+  Get-ExecutionPolicy
+  
+  # If "Restricted", change to RemoteSigned
+  Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+  ```
+  
+  **Alternative**: Use `windows-fast-paste.exe` (downloaded automatically)
+</Accordion>
+
+<Accordion title="nircmd.exe missing">
+  **Symptom**: Logs show `nircmd.exe not found`
+  
+  **Fix**:
+  ```bash
+  npm run download:nircmd
+  ```
+  
+  Or download manually:
+  - URL: https://www.nirsoft.net/utils/nircmd.html
+  - Extract `nircmd.exe` to `resources/bin/nircmd.exe`
+</Accordion>
+
+### Linux: Text Not Pasting
+
+<Steps>
+  <Step title="Check paste tool availability">
+    ```bash
+    # X11: xdotool (primary method)
+    which xdotool
+    
+    # Wayland: wtype or ydotool
+    which wtype
+    which ydotool
+    
+    # If none found, install one:
+    sudo apt install xdotool  # Debian/Ubuntu
+    sudo dnf install xdotool  # Fedora
+    ```
+  </Step>
+  
+  <Step title="Test native paste binary">
+    ```bash
+    # Check if compiled
+    ls -la resources/bin/linux-fast-paste
+    
+    # Test manually
+    echo "test" | xclip -selection clipboard
+    resources/bin/linux-fast-paste
+    # Should paste "test" to focused window
+    ```
+  </Step>
+  
+  <Step title="GNOME Wayland users">
+    Native Wayland apps (not XWayland) may not support auto-paste.
+    
+    **Workaround**:
+    - Use Ctrl+V manually
+    - Or use XWayland-based apps (most Electron apps run via XWayland)
+  </Step>
+  
+  <Step title="ydotool daemon (if using ydotool)">
+    ```bash
+    # Start daemon
+    sudo systemctl enable --now ydotoold
+    
+    # Check status
+    systemctl status ydotoold
+    ```
+  </Step>
+</Steps>
+
+## Hotkey Conflicts
+
+### Hotkey Not Registering
+
+<Accordion title="Symptom: 'Hotkey already in use' warning">
+  **Cause**: Another app is using the same hotkey
+  
+  **Fix**:
+  1. Open Control Panel → Settings → Hotkey
+  2. Change to a different key combination
+  3. Common alternatives: `F8`, `F9`, `Cmd+Shift+Space`, `Ctrl+Alt+R`
+  
+  **macOS conflicts**:
+  - Backtick (`): Spotlight or Raycast
+  - Cmd+Space: Spotlight
+  - Globe/Fn: System emoji picker (macOS 13+)
+  
+  **Windows conflicts**:
+  - Win+G: Xbox Game Bar
+  - Win+Shift+S: Snipping Tool
+</Accordion>
+
+<Accordion title="GNOME Wayland: Hotkey not working">
+  **Cause**: Electron's `globalShortcut` API doesn't work on Wayland
+  
+  **Solution**: OpenWhispr automatically uses native GNOME shortcuts
+  
+  **Verify**:
+  1. Open **GNOME Settings** → **Keyboard** → **Keyboard Shortcuts** → **Custom Shortcuts**
+  2. Look for "OpenWhispr Toggle Dictation"
+  3. If missing, restart OpenWhispr
+  
+  **Limitations**:
+  - Push-to-talk **not supported** (only tap-to-talk)
+  - Some keys unavailable (e.g., backtick `)
+</Accordion>
+
+<Accordion title="Windows Push-to-Talk Not Working">
+  **Symptom**: Tap works but push-to-talk doesn't respond
+  
+  **Cause**: Native key listener binary missing or failed
+  
+  **Fix**:
+  ```bash
+  # Re-download binary
+  npm run download:windows-key-listener
+  
+  # Or check if it exists
+  ls resources/bin/windows-key-listener.exe
+  ```
+  
+  **Fallback**: If binary can't be obtained, use tap-to-talk mode
+</Accordion>
+
+## Model Download Problems
+
+### Download Stalls or Fails
+
+<Steps>
+  <Step title="Check network connectivity">
+    ```bash
+    # Test HuggingFace connectivity
+    curl -I https://huggingface.co
+    
+    # Test whisper.cpp model URL
+    curl -I https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
+    ```
+  </Step>
+  
+  <Step title="Clear partial downloads">
+    ```bash
+    # Delete incomplete files
+    rm ~/.cache/openwhispr/whisper-models/*.tmp
+    rm ~/.cache/openwhispr/whisper-models/*.partial
+    ```
+  </Step>
+  
+  <Step title="Check disk space">
+    ```bash
+    # Ensure enough space for model
+    df -h ~/.cache/openwhispr
+    
+    # Large model needs 3GB free:
+    # - large-v3: 3GB
+    # - turbo: 1.6GB
+    # - medium: 1.5GB
+    ```
+  </Step>
+  
+  <Step title="Try manual download">
+    ```bash
+    # Download with curl (resume supported)
+    curl -L -C - -o ~/.cache/openwhispr/whisper-models/ggml-base.bin \
+      https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
+    
+    # Verify file size
+    ls -lh ~/.cache/openwhispr/whisper-models/ggml-base.bin
+    ```
+  </Step>
+</Steps>
+
+### Model File Corrupted
+
+<Accordion title="Symptom: 'Failed to load model' error">
+  **Cause**: Download interrupted or file corrupted
+  
+  **Fix**:
+  ```bash
+  # Delete corrupted model
+  rm ~/.cache/openwhispr/whisper-models/ggml-base.bin
+  
+  # Re-download via Control Panel
+  # Or manually:
+  curl -L -o ~/.cache/openwhispr/whisper-models/ggml-base.bin \
+    https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
+  
+  # Verify size matches expectedSizeBytes
+  # base model should be exactly 148000000 bytes
+  ```
+</Accordion>
+
+## Debug Mode
+
+Enable comprehensive logging for troubleshooting:
+
+<Steps>
+  <Step title="Enable via UI">
+    1. Open **Control Panel** → **Settings** → **Advanced**
+    2. Toggle **Debug Logging** on
+    3. Reproduce the issue
+    4. Click **Open Logs Folder**
+  </Step>
+  
+  <Step title="Enable via environment variable">
+    ```bash
+    # Add to .env file
+    OPENWHISPR_LOG_LEVEL=debug
+    
+    # Or set temporarily
+    export OPENWHISPR_LOG_LEVEL=debug
+    npm run dev
+    ```
+  </Step>
+  
+  <Step title="Log file locations">
+    <Tabs>
+      <Tab title="macOS">
+        `~/Library/Logs/OpenWhispr/main.log`
+      </Tab>
+      <Tab title="Windows">
+        `%USERPROFILE%\AppData\Roaming\OpenWhispr\logs\main.log`
+      </Tab>
+      <Tab title="Linux">
+        `~/.config/OpenWhispr/logs/main.log`
+      </Tab>
+    </Tabs>
+  </Step>
+  
+  <Step title="Read logs">
+    ```bash
+    # View last 100 lines
+    tail -n 100 ~/Library/Logs/OpenWhispr/main.log
+    
+    # Follow in real-time
+    tail -f ~/Library/Logs/OpenWhispr/main.log
+    
+    # Search for errors
+    grep -i error ~/Library/Logs/OpenWhispr/main.log
+    ```
+  </Step>
+</Steps>
+
+<Info>
+**What's logged in debug mode**:
+- Audio pipeline (MediaRecorder → FFmpeg → whisper.cpp)
+- IPC calls and responses
+- File system operations
+- Network requests (API calls, downloads)
+- Error stack traces
+</Info>
+
+## Performance Issues
+
+### Slow Transcription (Local)
+
+<Accordion title="Large model on slow CPU">
+  **Symptom**: Transcription takes 30+ seconds for 10 seconds of audio
+  
+  **Fix**:
+  1. Switch to smaller model: `base` (142MB) or `tiny` (75MB)
+  2. Use cloud transcription (OpenAI API)
+  3. Enable GPU acceleration (if supported):
+     - **macOS**: Automatic (Metal)
+     - **Windows/Linux**: CUDA (requires NVIDIA GPU)
+</Accordion>
+
+<Accordion title="Memory usage high">
+  **Symptom**: OpenWhispr uses 500MB+ RAM
+  
+  **Cause**: Large model loaded in memory
+  
+  **Fix**:
+  - Use smaller model
+  - Stop whisper-server when not in use:
+    ```javascript
+    await window.electronAPI.whisperServerStop();
+    ```
+  - Restart app to clear memory
+</Accordion>
+
+### High CPU Usage
+
+<Accordion title="whisper.cpp pegging CPU">
+  **Normal behavior**: Transcription uses 100% of available cores
+  
+  **If it persists after transcription**:
+  1. Check if whisper-server is stuck:
+     ```javascript
+     await window.electronAPI.whisperServerStatus()
+     ```
+  2. Stop server:
+     ```javascript
+     await window.electronAPI.whisperServerStop()
+     ```
+  3. Restart OpenWhispr
+</Accordion>
+
+## Getting Help
+
+If none of the above solutions work:
+
+<Steps>
+  <Step title="Gather information">
+    - **OS**: macOS 13.4 / Windows 11 / Ubuntu 22.04
+    - **OpenWhispr version**: Control Panel → About
+    - **Error message**: Exact text or screenshot
+    - **Debug logs**: Last 50 lines from log file
+  </Step>
+  
+  <Step title="Search existing issues">
+    Check GitHub Issues: https://github.com/OpenWhispr/openwhispr/issues
+    
+    Use search terms like:
+    - "microphone permission"
+    - "whisper.cpp failed"
+    - "paste not working"
+  </Step>
+  
+  <Step title="Create new issue">
+    If not already reported:
+    
+    1. Go to https://github.com/OpenWhispr/openwhispr/issues/new
+    2. Use template:
+       ```markdown
+       **Describe the bug**
+       [Clear description]
+       
+       **To Reproduce**
+       1. Open app
+       2. Record dictation
+       3. Error appears
+       
+       **Expected behavior**
+       [What should happen]
+       
+       **Environment**
+       - OS: [e.g., macOS 14.2]
+       - Version: [e.g., 1.5.5]
+       
+       **Debug logs**
+       ```
+       [Paste relevant log lines]
+       ```
+       ```
+  </Step>
+</Steps>
+
+<Warning>
+**Do NOT include** API keys, passwords, or personal information in GitHub issues. Redact them from logs before posting.
+</Warning>
+
+## Common Error Messages
+
+| Error Message | Cause | Solution |
+|---------------|-------|----------|
+| `Microphone permission denied` | macOS/Windows microphone privacy setting | Grant permission in System Settings |
+| `No audio detected` | Microphone muted or gain too low | Increase input volume |
+| `whisper.cpp binary not found` | Missing or wrong platform binary | Run `npm run download:whisper-cpp` |
+| `Failed to load model` | Model file corrupted or missing | Delete and re-download model |
+| `Invalid API key` | Wrong or expired OpenAI key | Update key in Settings |
+| `Rate limit exceeded` | Too many API requests | Wait 60s or upgrade plan |
+| `Accessibility permission required` | macOS paste needs permission | Enable in System Settings → Accessibility |
+| `xdotool not found` | Linux paste tool missing | `sudo apt install xdotool` |
+| `Hotkey already in use` | Conflict with another app | Change hotkey in Settings |
+| `FFmpeg not found` | Bundled FFmpeg failed to unpack | Reinstall OpenWhispr |
+
+## Platform-Specific Notes
+
+<Tabs>
+  <Tab title="macOS">
+    **Common Issues**:
+    - Globe key listener requires Xcode Command Line Tools
+    - Accessibility permission needed for paste
+    - Notarization may cause "damaged" errors on unsigned builds
+    
+    **Fix "App is damaged"**:
+    ```bash
+    xattr -cr /Applications/OpenWhispr.app
+    ```
+  </Tab>
+  
+  <Tab title="Windows">
+    **Common Issues**:
+    - Push-to-talk requires native binary (auto-downloaded)
+    - PowerShell execution policy may block paste
+    - SmartScreen warnings on unsigned builds
+    
+    **Fix SmartScreen**:
+    Click "More info" → "Run anyway"
+  </Tab>
+  
+  <Tab title="Linux">
+    **Common Issues**:
+    - Multiple paste tool options (xdotool, wtype, ydotool)
+    - GNOME Wayland requires D-Bus shortcuts
+    - Some distros need manual dependency installation
+    
+    **Install dependencies**:
+    ```bash
+    # Debian/Ubuntu
+    sudo apt install xdotool wl-clipboard ydotool
+    
+    # Fedora
+    sudo dnf install xdotool wl-clipboard ydotool
+    ```
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="sitemap" href="/advanced/architecture">
+    Deep dive into technical internals
+  </Card>
+  <Card title="Model Registry" icon="database" href="/advanced/model-registry">
+    Manage AI models and downloads
+  </Card>
+  <Card title="Building from Source" icon="hammer" href="/advanced/building-from-source">
+    Compile and customize OpenWhispr
+  </Card>
+</CardGroup>

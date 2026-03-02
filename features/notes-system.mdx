@@ -1,0 +1,592 @@
+---
+title: "Notes System"
+description: "Create, organize, and enhance voice notes with folders, audio upload, and AI actions"
+---
+
+OpenWhispr's Notes System lets you create organized collections of transcribed voice notes with powerful features like folder organization, audio file upload, real-time dictation, and AI-powered enhancements.
+
+## Overview
+
+The Notes System is a dedicated workspace for:
+
+<CardGroup cols={2}>
+  <Card title="Personal Notes" icon="file-text">
+    Create, edit, and organize your own voice notes with custom folders
+  </Card>
+  
+  <Card title="Meeting Transcriptions" icon="users">
+    Upload audio files from meetings and automatically transcribe them
+  </Card>
+  
+  <Card title="Real-Time Dictation" icon="microphone">
+    Dictate directly into notes with live transcription streaming
+  </Card>
+  
+  <Card title="AI Actions" icon="sparkles">
+    Apply AI-powered actions to enhance, summarize, or transform note content
+  </Card>
+</CardGroup>
+
+## Getting Started
+
+### Accessing Notes
+
+1. Open the **Control Panel** (right-click system tray icon)
+2. Click the **Notes** tab in the sidebar
+3. You'll see the Notes interface with folders on the left and editor on the right
+
+### First-Time Setup (Onboarding)
+
+When you first access Notes, you may see an onboarding flow:
+
+<Steps>
+  <Step title="Welcome Screen">
+    Introduction to the Notes System and its capabilities
+  </Step>
+  
+  <Step title="Pro Feature Notice">
+    Notes require an OpenWhispr Pro subscription
+  </Step>
+  
+  <Step title="Start Free Trial">
+    Click to begin your 7-day free trial (if eligible)
+  </Step>
+  
+  <Step title="Notes Unlocked">
+    Access the full Notes System after upgrading or starting trial
+  </Step>
+</Steps>
+
+<Info>
+  The Notes System is a **Pro feature**. Free users get a 7-day trial, then need to upgrade to Pro ($9/month) for continued access.
+</Info>
+
+## Creating and Managing Notes
+
+### Creating a New Note
+
+<Steps>
+  <Step title="Select a Folder">
+    Click on a folder in the left sidebar (cannot create notes in Meetings folder)
+  </Step>
+  
+  <Step title="Click New Note">
+    Click the **+ New Note** button at the top of the notes list
+  </Step>
+  
+  <Step title="Edit Title">
+    The note opens with title "Untitled Note" — click to edit
+  </Step>
+  
+  <Step title="Add Content">
+    Type or dictate content in the editor area
+  </Step>
+</Steps>
+
+Notes auto-save as you type — no need to manually save!
+
+### Note Editor Interface
+
+The note editor provides a dual-pane experience:
+
+<Tabs>
+  <Tab title="Original Content (Left)">
+    **Purpose**: Your raw, unprocessed note content
+    
+    **Features**:
+    - Markdown-enabled editor
+    - Real-time auto-save
+    - Dictation widget for voice input
+    - Full edit history
+    
+    **Use for**: Raw meeting notes, quick thoughts, unprocessed transcriptions
+  </Tab>
+  
+  <Tab title="Enhanced Content (Right)">
+    **Purpose**: AI-processed version of your content
+    
+    **Features**:
+    - Markdown rendering
+    - Applied AI actions shown
+    - Side-by-side comparison
+    - Copy to original option
+    
+    **Use for**: Cleaned-up summaries, formatted reports, professional outputs
+  </Tab>
+</Tabs>
+
+### Editing Notes
+
+- **Title**: Click the title at the top to edit
+- **Content**: Type directly in the left editor pane
+- **Markdown**: Use Markdown syntax for formatting:
+  - `# Heading`
+  - `**bold**`
+  - `- bullet list`
+  - ``` `code` ```
+  - `> blockquote`
+
+<Tip>
+  All changes are automatically saved within 1 second of typing. Look for the saving indicator in the UI.
+</Tip>
+
+### Deleting Notes
+
+1. **Find the note** in the left sidebar list
+2. **Click the ⋯** (more options) button
+3. **Select Delete**
+4. **Confirm** deletion in the dialog
+
+<Warning>
+  Deleted notes cannot be recovered. Make sure to export or back up important notes before deleting.
+</Warning>
+
+## Folder Organization
+
+### Default Folders
+
+OpenWhispr creates two folders by default:
+
+- **Personal Notes** — For general-purpose notes you create manually
+- **Meetings** — For audio file uploads and meeting transcriptions (read-only)
+
+### Creating Custom Folders
+
+<Steps>
+  <Step title="Click + Create Folder">
+    Find the button at the top of the folder list
+  </Step>
+  
+  <Step title="Enter Folder Name">
+    Type a descriptive name (e.g., "Client Calls", "Research Notes")
+  </Step>
+  
+  <Step title="Press Enter">
+    The folder is created and appears in the sidebar
+  </Step>
+</Steps>
+
+### Managing Folders
+
+Right-click or click the **⋯** button next to a folder:
+
+<Accordion title="Rename Folder">
+  1. Select **Rename** from the dropdown
+  2. Edit the folder name inline
+  3. Press **Enter** or click the checkmark to save
+</Accordion>
+
+<Accordion title="Delete Folder">
+  1. Select **Delete** from the dropdown
+  2. Confirm deletion in the dialog
+  3. All notes in the folder will be deleted too
+  
+  <Warning>
+    Deleting a folder permanently deletes all notes inside. This cannot be undone.
+  </Warning>
+</Accordion>
+
+<Accordion title="Add Existing Notes">
+  1. Select **Add Notes** from the dropdown
+  2. Choose notes from other folders
+  3. Selected notes are moved to this folder
+</Accordion>
+
+### Moving Notes Between Folders
+
+Two methods:
+
+**Method 1: Drag and Drop**
+1. Click and hold on a note in the list
+2. Drag to the target folder
+3. Drop to move the note
+
+**Method 2: Folder Menu**
+1. Click **⋯** next to note in list
+2. Select **Move to Folder**
+3. Choose destination folder
+
+<Info>
+  Notes in the **Meetings** folder cannot be moved to other folders — they're created automatically from audio uploads.
+</Info>
+
+## Real-Time Dictation into Notes
+
+Dictate directly into your notes with live transcription:
+
+### Using the Dictation Widget
+
+<Steps>
+  <Step title="Open a Note">
+    Create or select an existing note
+  </Step>
+  
+  <Step title="Find Dictation Widget">
+    Look for the microphone widget at the bottom of the editor
+  </Step>
+  
+  <Step title="Click to Start">
+    Click the microphone button to begin dictation
+  </Step>
+  
+  <Step title="Speak Naturally">
+    Speak your content — text appears in real-time in the editor
+  </Step>
+  
+  <Step title="Click to Stop">
+    Click the microphone button again to finish
+  </Step>
+</Steps>
+
+### Real-Time Transcription Banner
+
+When dictating, you'll see a banner showing:
+- **Partial transcript**: Words as they're being recognized (live)
+- **Processing status**: When transcription is finalizing
+- **Final commit**: When text is inserted into your note
+
+<Tip>
+  Real-time dictation uses your configured transcription mode (Cloud, BYOK, or Local) from Settings.
+</Tip>
+
+## Audio File Upload & Transcription
+
+Upload audio recordings from meetings, interviews, or lectures and automatically transcribe them.
+
+### Uploading Audio Files
+
+<Steps>
+  <Step title="Open Upload View">
+    Click the **Upload Audio** button in the Notes interface
+  </Step>
+  
+  <Step title="Select Audio File">
+    Choose an audio file from your computer:
+    - Supported formats: MP3, WAV, M4A, FLAC, OGG, WEBM
+    - Max file size: Varies by transcription provider
+  </Step>
+  
+  <Step title="Choose Transcription Mode">
+    Select how to transcribe:
+    - **OpenWhispr Cloud** (fastest, uses your Pro plan)
+    - **BYOK** (your own API keys)
+    - **Local Processing** (privacy-first, slower)
+  </Step>
+  
+  <Step title="Start Transcription">
+    Click **Transcribe** and wait for processing
+  </Step>
+  
+  <Step title="Note Created">
+    A new note appears in the **Meetings** folder with the transcription
+  </Step>
+</Steps>
+
+### Audio Upload Features
+
+<CardGroup cols={2}>
+  <Card title="Progress Tracking" icon="loader">
+    Real-time progress bar shows upload and transcription status
+  </Card>
+  
+  <Card title="Format Support" icon="file-audio">
+    Supports all common audio formats (MP3, WAV, M4A, etc.)
+  </Card>
+  
+  <Card title="Automatic Organization" icon="folder">
+    Transcribed notes automatically saved to Meetings folder
+  </Card>
+  
+  <Card title="Error Handling" icon="alert-triangle">
+    Clear error messages if transcription fails with retry option
+  </Card>
+</CardGroup>
+
+<Info>
+  Audio files are processed using your selected transcription mode. For large files (over 30 minutes), local processing may be very slow — cloud modes are recommended.
+</Info>
+
+## AI Actions on Notes
+
+Apply AI-powered actions to enhance, summarize, format, or transform your note content.
+
+### What Are AI Actions?
+
+AI Actions are pre-configured prompts that process your note content through AI:
+
+- **Summarize** — Create a concise summary
+- **Format** — Clean up formatting and structure
+- **Action Items** — Extract tasks and to-dos
+- **Key Points** — List main takeaways
+- **Q&A** — Generate questions and answers
+- **Custom** — Your own custom prompts
+
+### Applying an AI Action
+
+<Steps>
+  <Step title="Select Content">
+    Open the note you want to enhance (content in left pane)
+  </Step>
+  
+  <Step title="Open Action Picker">
+    Click the **AI Actions** button above the editor
+  </Step>
+  
+  <Step title="Choose Action">
+    Select a pre-configured action or create a custom one
+  </Step>
+  
+  <Step title="AI Processing">
+    Watch the progress overlay as AI processes your content
+  </Step>
+  
+  <Step title="Review Enhanced Content">
+    The result appears in the right pane (enhanced content)
+  </Step>
+</Steps>
+
+### Action Processing States
+
+During AI processing, you'll see:
+
+| State | Description | UI Indicator |
+|-------|-------------|-------------|
+| **Idle** | No action running | Action Picker button enabled |
+| **Preparing** | Setting up AI request | "Preparing..." overlay |
+| **Streaming** | AI generating content | Partial content appearing |
+| **Complete** | Action finished | Enhanced content shown |
+| **Error** | Something went wrong | Error message with details |
+
+### Managing AI Actions
+
+<Accordion title="Create Custom Action">
+  1. Click **AI Actions → Manage Actions**
+  2. Click **+ New Action**
+  3. Enter:
+     - **Name**: Descriptive title (e.g., "Professional Email")
+     - **Prompt**: Instructions for the AI (e.g., "Rewrite as formal email")
+  4. Click **Save**
+  5. Your custom action appears in the Action Picker
+</Accordion>
+
+<Accordion title="Edit Existing Action">
+  1. Open **AI Actions → Manage Actions**
+  2. Find the action you want to edit
+  3. Click the **Edit** (pencil) icon
+  4. Modify name or prompt
+  5. Click **Save**
+</Accordion>
+
+<Accordion title="Delete Custom Action">
+  1. Open **AI Actions → Manage Actions**
+  2. Find the custom action
+  3. Click the **Delete** (trash) icon
+  4. Confirm deletion
+  
+  <Note>
+    Built-in actions (Summarize, Format, etc.) cannot be deleted.
+  </Note>
+</Accordion>
+
+### Example AI Actions
+
+<Tabs>
+  <Tab title="Meeting Summary">
+    **Prompt**: "Summarize this meeting transcript with sections for Attendees, Discussion Points, Decisions Made, and Action Items."
+    
+    **Best for**: Long meeting transcriptions that need clear structure
+  </Tab>
+  
+  <Tab title="Email Draft">
+    **Prompt**: "Rewrite these notes as a professional email with subject line, greeting, concise body, and appropriate closing."
+    
+    **Best for**: Converting rough notes into polished communication
+  </Tab>
+  
+  <Tab title="Study Guide">
+    **Prompt**: "Create a study guide with key concepts, important terms, and review questions based on this content."
+    
+    **Best for**: Educational content or training materials
+  </Tab>
+  
+  <Tab title="Bullet Points">
+    **Prompt**: "Convert this content into a clean bullet-point list highlighting main ideas and supporting details."
+    
+    **Best for**: Making dense content scannable
+  </Tab>
+</Tabs>
+
+### AI Action Settings
+
+Configure which AI provider and model to use for actions:
+
+1. Go to **Settings → Intelligence**
+2. Select **AI Provider** (OpenAI, Anthropic, Gemini, Groq, or Local)
+3. Choose **AI Model** from dropdown
+4. Enter API key (for cloud providers)
+
+The same AI configuration is used for both:
+- Agent-addressed dictation commands ("Hey Assistant...")
+- Notes System AI actions
+
+<Info>
+  For best results with long notes, use models with large context windows like GPT-4.1 (1M tokens), Claude Opus (200K tokens), or Gemini 3.1 Pro (1M tokens).
+</Info>
+
+## Notes Features Summary
+
+### Note Organization
+
+- ✅ Unlimited notes (Pro users)
+- ✅ Custom folders with drag-and-drop
+- ✅ Automatic Meetings folder
+- ✅ Move notes between folders
+- ✅ Rename and delete folders
+
+### Content Creation
+
+- ✅ Real-time dictation widget
+- ✅ Markdown editor with live preview
+- ✅ Audio file upload & transcription
+- ✅ Auto-save (1-second debounce)
+- ✅ Title and content editing
+
+### AI Enhancements
+
+- ✅ Pre-built AI actions
+- ✅ Custom action templates
+- ✅ Side-by-side original/enhanced view
+- ✅ Streaming AI responses
+- ✅ Multiple AI provider support
+
+### Data Management
+
+- ✅ Local SQLite database storage
+- ✅ Search and filter (coming soon)
+- ✅ Export notes (coming soon)
+- ✅ Sync across devices (coming soon)
+
+## Troubleshooting
+
+<Accordion title="Can't access Notes System">
+  **Cause**: Notes require OpenWhispr Pro subscription
+  
+  **Solution**:
+  1. Click **Start Free Trial** if eligible
+  2. Or upgrade to Pro in **Settings → Plans & Billing**
+</Accordion>
+
+<Accordion title="Audio upload failing">
+  **Possible causes**:
+  1. File format not supported
+  2. File too large for provider
+  3. API key issues (BYOK mode)
+  4. Network connection (cloud modes)
+  
+  **Solutions**:
+  - Use MP3 or WAV format
+  - Try a smaller file or shorter clip
+  - Check API key validity
+  - Switch to Local Processing for large files
+</Accordion>
+
+<Accordion title="Real-time dictation not working">
+  **Cause**: Microphone permissions or transcription settings
+  
+  **Solution**:
+  1. Check microphone permissions in Settings
+  2. Verify transcription mode is configured
+  3. Test basic dictation first (global hotkey)
+  4. Check for error messages in dictation widget
+</Accordion>
+
+<Accordion title="AI actions failing">
+  **Possible causes**:
+  1. No AI provider configured
+  2. Invalid API key
+  3. Content too long for model
+  4. Network issues (cloud models)
+  
+  **Solutions**:
+  - Configure AI provider in **Settings → Intelligence**
+  - Verify API key has credits/is active
+  - Try with shorter content first
+  - Switch to local model for privacy/offline use
+</Accordion>
+
+<Accordion title="Notes not saving">
+  **Cause**: Database write issues or disk space
+  
+  **Solution**:
+  1. Check available disk space
+  2. Close and reopen Control Panel
+  3. Restart OpenWhispr
+  4. Check database permissions
+</Accordion>
+
+## Privacy & Storage
+
+<Info>
+  All notes are stored **locally** in a SQLite database on your device. Notes are never sent to OpenWhispr servers.
+</Info>
+
+### Database Location
+
+- **macOS**: `~/Library/Application Support/OpenWhispr/transcriptions.db`
+- **Windows**: `%APPDATA%\OpenWhispr\transcriptions.db`
+- **Linux**: `~/.config/OpenWhispr/transcriptions.db`
+
+### What Gets Sent to Cloud?
+
+Only when using cloud features:
+
+| Feature | What's Sent | Where |
+|---------|-------------|-------|
+| **Audio Upload (Cloud)** | Audio file | OpenWhispr Cloud or BYOK provider |
+| **AI Actions (Cloud)** | Note text content only | AI provider (OpenAI/Anthropic/etc.) |
+| **Real-Time Dictation** | Audio chunks | Your configured transcription mode |
+| **Local Processing** | Nothing | All processing on-device |
+
+<Warning>
+  When using cloud AI actions, your note content is sent to the AI provider for processing. Use local models for sensitive content.
+</Warning>
+
+## Tips for Effective Note-Taking
+
+<CardGroup cols={2}>
+  <Card title="Use Folders Wisely" icon="folder">
+    Create folders by project, client, or category for easy organization
+  </Card>
+  
+  <Card title="Title Descriptively" icon="heading">
+    Use clear titles with dates: "Client Call - Acme Corp - 2024-03-15"
+  </Card>
+  
+  <Card title="Combine Methods" icon="layers">
+    Dictate rough notes, then use AI actions to clean them up
+  </Card>
+  
+  <Card title="Review Enhanced Content" icon="check">
+    Always review AI-enhanced output before copying to original
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="AI Processing" icon="sparkles" href="/features/ai-processing">
+    Learn more about AI models and custom prompts
+  </Card>
+  
+  <Card title="Transcription Modes" icon="settings" href="/features/transcription-modes">
+    Configure your transcription provider for audio uploads
+  </Card>
+  
+  <Card title="Custom Dictionary" icon="book-open" href="/features/custom-dictionary">
+    Improve transcription accuracy for technical terms
+  </Card>
+  
+  <Card title="Basic Dictation" icon="microphone" href="/features/dictation">
+    Master the fundamentals of OpenWhispr dictation
+  </Card>
+</CardGroup>

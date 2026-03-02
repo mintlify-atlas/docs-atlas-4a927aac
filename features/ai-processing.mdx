@@ -1,0 +1,391 @@
+---
+title: "AI Processing"
+description: "Use AI to format, enhance, and transform your dictated text with natural language commands"
+---
+
+OpenWhispr's AI processing feature lets you give instructions to an AI agent during dictation to automatically format, enhance, or transform your text.
+
+## How It Works
+
+<Steps>
+  <Step title="Name Your Agent">
+    During setup, you choose a name for your AI assistant (e.g., "Assistant", "Jarvis", "Alex")
+  </Step>
+  
+  <Step title="Address Your Agent">
+    Start your dictation with "Hey [AgentName]," followed by your instruction
+  </Step>
+  
+  <Step title="AI Processes">
+    The AI understands your request and formats/transforms your text accordingly
+  </Step>
+  
+  <Step title="Agent Name Removed">
+    The final output has the agent name reference removed automatically
+  </Step>
+</Steps>
+
+## Naming Your Agent
+
+### During Onboarding
+
+When you first set up OpenWhispr, step 6 of 8 asks you to name your agent:
+
+- Choose a name that's easy to say and memorable
+- Common choices: "Assistant", "Jarvis", "Claude", "GPT", "Alex", "Sam"
+- The name helps OpenWhispr distinguish between regular dictation and AI commands
+
+### Changing Your Agent Name
+
+You can change your agent's name anytime:
+
+1. Open **Settings → Intelligence**
+2. Find **Agent Name** field
+3. Enter your new name
+4. Click **Save**
+
+<Tip>
+  Your agent name is automatically added to your custom dictionary to ensure it's always recognized correctly during transcription.
+</Tip>
+
+## Example Commands
+
+<CardGroup cols={2}>
+  <Card title="Format as Email" icon="mail">
+    **Input**: "Hey Assistant, format this as a professional email. Thanks for the meeting today, let's schedule a follow-up next week."
+    
+    **Output**: Professional email format with greeting, body, and signature
+  </Card>
+  
+  <Card title="Create Bullet List" icon="list">
+    **Input**: "Hey Claude, convert this to bullet points. We discussed the new feature, timeline concerns, and budget approval."
+    
+    **Output**: Formatted bullet list with proper structure
+  </Card>
+  
+  <Card title="Make Professional" icon="briefcase">
+    **Input**: "Hey Jarvis, make this more formal. The thing is broken and we need to fix it ASAP."
+    
+    **Output**: "The system is experiencing issues and requires immediate attention."
+  </Card>
+  
+  <Card title="Summarize" icon="file-text">
+    **Input**: "Hey GPT, summarize this meeting. [Long rambling notes about project status, team updates, action items]"
+    
+    **Output**: Concise summary with key points and action items
+  </Card>
+</CardGroup>
+
+## AI Provider Options
+
+OpenWhispr supports multiple AI providers with different models optimized for various use cases.
+
+### Cloud Providers
+
+<Tabs>
+  <Tab title="OpenAI">
+    **Models**:
+    - **GPT-5.2** — Latest flagship reasoning model
+    - **GPT-5 Mini** — Fast and cost-efficient
+    - **GPT-5 Nano** — Ultra-fast, low latency
+    - **GPT-4.1** — Strong baseline with 1M context
+    - **GPT-4.1 Mini** — Smaller GPT-4.1 variant
+    - **GPT-4.1 Nano** — Lowest latency GPT-4.1
+    
+    **Best For**: General-purpose text transformation, reasoning tasks
+    
+    **Setup**: Enter your OpenAI API key in **Settings → Intelligence → AI Provider**
+  </Tab>
+  
+  <Tab title="Anthropic Claude">
+    **Models**:
+    - **Claude Opus 4.6** — Most capable Claude model
+    - **Claude Sonnet 4.6** — Balanced performance
+    - **Claude Haiku 4.5** — Fast with near-frontier intelligence
+    
+    **Best For**: Complex reasoning, long-form content, nuanced language understanding
+    
+    **Setup**: Enter your Anthropic API key in **Settings → Intelligence → AI Provider**
+  </Tab>
+  
+  <Tab title="Google Gemini">
+    **Models**:
+    - **Gemini 3.1 Pro** — Next-gen flagship for complex reasoning
+    - **Gemini 3 Flash** — Ultra-fast, high-capability next-gen model
+    - **Gemini 2.5 Flash Lite** — Lowest latency and cost
+    
+    **Best For**: Fast processing, multilingual tasks
+    
+    **Setup**: Enter your Gemini API key in **Settings → Intelligence → AI Provider**
+  </Tab>
+  
+  <Tab title="Groq">
+    **Models**:
+    - **Qwen3 32B** — Powerful reasoning, 131K context
+    - **GPT-OSS 120B** — OpenAI's open-source flagship, 500 T/sec
+    - **GPT-OSS 20B** — Fast open-source, 1000 T/sec
+    - **LLaMA 3.3 70B** — Meta's versatile model, 280 T/sec
+    - **LLaMA 3.1 8B** — Ultra-fast 560 T/sec
+    - **Llama 4 Scout** — Efficient multimodal, 750 T/sec
+    - **Compound** — Groq's compound system, 450 T/sec
+    - **Compound Mini** — Fast compound, 3x lower latency
+    - **Kimi K2** — Moonshot AI's 1T MoE, 256K context
+    
+    **Best For**: Ultra-fast inference, real-time processing
+    
+    **Setup**: Enter your Groq API key in **Settings → Intelligence → AI Provider**
+    
+    <Info>
+      Groq offers the fastest inference speeds — often processing in under 1 second.
+    </Info>
+  </Tab>
+</Tabs>
+
+### Local Models
+
+Run AI models entirely on your device for complete privacy:
+
+<Tabs>
+  <Tab title="Qwen">
+    **Models**:
+    - **Qwen3 8B** (5.0GB) — Latest with thinking mode support ⭐ Recommended
+    - **Qwen3 8B Q5** (5.9GB) — Higher quality
+    - **Qwen3 4B** (2.5GB) — Compact with reasoning
+    - **Qwen3 1.7B** (1.8GB) — Small but capable
+    - **Qwen3 0.6B** (0.6GB) — Tiny for edge devices
+    - **Qwen3 32B** (19.8GB) — Most powerful
+    - **Qwen2.5 0.5B-7B** — Various sizes for different needs
+    
+    **Best For**: Reasoning tasks, thinking mode, balanced performance
+  </Tab>
+  
+  <Tab title="Meta Llama">
+    **Models**:
+    - **Llama 3.2 3B** (2.0GB) — Small but capable multilingual ⭐ Recommended
+    - **Llama 3.2 1B** (0.8GB) — Tiny for edge devices
+    - **Llama 3.1 8B** (4.9GB) — Powerful with great performance
+    
+    **Best For**: General-purpose tasks, multilingual support
+  </Tab>
+  
+  <Tab title="Mistral AI">
+    **Models**:
+    - **Mistral 7B Instruct v0.3** (4.4GB) — Fast and efficient ⭐ Recommended
+    - **Mistral 7B Q5** (5.1GB) — Higher quality version
+    
+    **Best For**: Fast instruction following, efficient processing
+  </Tab>
+  
+  <Tab title="OpenAI OSS">
+    **Models**:
+    - **GPT-OSS 20B** (12.1GB) — OpenAI's open-weight model ⭐ Recommended
+    
+    **Best For**: Consumer hardware with high capability
+  </Tab>
+  
+  <Tab title="Gemma (Google)">
+    **Models**:
+    - **Gemma 3 4B** (2.49GB) — Great balance of speed and quality ⭐ Recommended
+    - **Gemma 3 1B** (0.81GB) — Ultra-fast for short cleanup
+    
+    **Best For**: Fast dictation cleanup, Google-style responses
+  </Tab>
+</Tabs>
+
+### Setting Up Local Models
+
+<Steps>
+  <Step title="Select Local Provider">
+    Go to **Settings → Intelligence → AI Provider** and select **Local**
+  </Step>
+  
+  <Step title="Choose Model Family">
+    Select Qwen, Llama, Mistral, OpenAI OSS, or Gemma
+  </Step>
+  
+  <Step title="Select Model Size">
+    Choose a model based on your hardware:
+    - **8GB RAM or less**: Use models under 2GB (Llama 3.2 3B, Qwen3 1.7B, Gemma 3 1B)
+    - **16GB RAM**: Use models up to 5GB (Qwen3 8B, Mistral 7B)
+    - **32GB+ RAM**: Use larger models (Qwen3 32B, GPT-OSS 20B)
+  </Step>
+  
+  <Step title="Download Model">
+    Click **Download Model** and wait for completion (downloads from HuggingFace)
+  </Step>
+  
+  <Step title="Start Using">
+    Once downloaded, the model runs entirely on your device
+  </Step>
+</Steps>
+
+<Warning>
+  Local models require significant RAM and processing power. Start with smaller models (under 2GB) to test performance before downloading larger ones.
+</Warning>
+
+## Common Use Cases
+
+<Accordion title="Email Composition">
+  **Command**: "Hey Assistant, write a professional email thanking the client for their business and proposing a follow-up meeting next week."
+  
+  **Output**: Fully formatted email with subject line, greeting, body, call-to-action, and signature
+</Accordion>
+
+<Accordion title="Meeting Notes">
+  **Command**: "Hey Claude, organize these meeting notes with attendees, discussion points, and action items. [Rambling notes]"
+  
+  **Output**: Structured notes with clear sections and formatting
+</Accordion>
+
+<Accordion title="Code Comments">
+  **Command**: "Hey Jarvis, add professional comments to this code. function processData array map filter reduce return result"
+  
+  **Output**: Properly commented code snippet explaining each step
+</Accordion>
+
+<Accordion title="Tone Adjustment">
+  **Command**: "Hey GPT, make this friendlier. We regret to inform you that your request has been denied due to policy violations."
+  
+  **Output**: "We appreciate you reaching out! Unfortunately, we're unable to approve your request at this time due to our current policies. Let's discuss alternative options that might work better."
+</Accordion>
+
+<Accordion title="Translation">
+  **Command**: "Hey Assistant, translate this to Spanish. The meeting is scheduled for next Tuesday at 3 PM."
+  
+  **Output**: "La reunión está programada para el próximo martes a las 3 PM."
+</Accordion>
+
+<Accordion title="List Formatting">
+  **Command**: "Hey Claude, format as a numbered checklist. Review document, send to legal, get approval, publish."
+  
+  **Output**:
+  ```
+  1. [ ] Review document
+  2. [ ] Send to legal
+  3. [ ] Get approval
+  4. [ ] Publish
+  ```
+</Accordion>
+
+## Regular Dictation vs AI Commands
+
+OpenWhispr automatically detects the difference:
+
+| Type | Pattern | Processing |
+|------|---------|------------|
+| **Regular Dictation** | No agent name | Direct transcription only |
+| **AI Command** | Starts with "Hey [AgentName]," | Transcription + AI processing |
+
+**Examples**:
+- ❌ Regular: "This is a test message" → Output: "This is a test message"
+- ✅ AI: "Hey Assistant, capitalize this. this is a test message" → Output: "This Is A Test Message"
+
+## Privacy Considerations
+
+<CardGroup cols={2}>
+  <Card title="Cloud Models" icon="cloud">
+    Your dictation is sent to the AI provider's API for processing. Check provider privacy policies.
+  </Card>
+  
+  <Card title="Local Models" icon="shield">
+    Your dictation never leaves your device. Complete privacy for sensitive content.
+  </Card>
+</CardGroup>
+
+<Info>
+  When using cloud providers, only the transcribed text is sent to the AI — your audio file is never uploaded to AI services.
+</Info>
+
+## Configuring AI Settings
+
+### Selecting Provider and Model
+
+1. Open **Settings → Intelligence**
+2. Choose **AI Provider** (OpenAI, Anthropic, Gemini, Groq, or Local)
+3. Enter API key (for cloud providers)
+4. Select **AI Model** from dropdown
+5. Click **Save**
+
+### Advanced: Prompt Studio
+
+Customize the system prompt that instructs the AI how to process your commands:
+
+1. Go to **Settings → Intelligence → Prompt Studio**
+2. Edit the system prompt template
+3. Use `{agentName}` and `{transcription}` variables
+4. Test with sample input
+5. Save your custom prompt
+
+<Warning>
+  Editing the system prompt is for advanced users. The default prompt is optimized for most use cases.
+</Warning>
+
+## Troubleshooting
+
+<Accordion title="AI not responding to commands">
+  1. Verify your agent name is correct in Settings
+  2. Make sure you're saying "Hey [AgentName]," at the start
+  3. Check that your API key is valid (for cloud providers)
+  4. For local models, ensure the model is fully downloaded
+</Accordion>
+
+<Accordion title="Slow processing with local models">
+  1. Try a smaller model (Qwen3 1.7B, Llama 3.2 3B, Gemma 3 1B)
+  2. Close other resource-intensive applications
+  3. Ensure you have enough free RAM
+  4. Consider upgrading to cloud processing for speed
+</Accordion>
+
+<Accordion title="Unexpected output">
+  1. Be more specific with your command
+  2. Try rephrasing your instruction
+  3. Use examples: "Hey Assistant, format like this example: [example]"
+  4. Check Prompt Studio for system prompt issues
+</Accordion>
+
+<Accordion title="API key errors">
+  1. Verify the API key is correct
+  2. Check that your API account has credits/is active
+  3. Ensure the key has proper permissions
+  4. Try regenerating the API key from provider dashboard
+</Accordion>
+
+## Tips for Best Results
+
+<CardGroup cols={2}>
+  <Card title="Be Specific" icon="target">
+    Clear instructions get better results: "Make this formal" vs "Rewrite professionally with business tone"
+  </Card>
+  
+  <Card title="Provide Context" icon="info">
+    Include relevant details: "Format as email to client about project delay" vs just "Format as email"
+  </Card>
+  
+  <Card title="Use Examples" icon="lightbulb">
+    Show what you want: "List like this: 1. Item, 2. Item" for consistent formatting
+  </Card>
+  
+  <Card title="Iterate" icon="refresh-cw">
+    If output isn't perfect, dictate a follow-up command: "Hey Assistant, make that more concise"
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Dictionary" icon="book-open" href="/features/custom-dictionary">
+    Add your agent name and technical terms for better recognition
+  </Card>
+  
+  <Card title="Notes System" icon="file-text" href="/features/notes-system">
+    Use AI actions to enhance your voice notes
+  </Card>
+  
+  <Card title="Transcription Modes" icon="settings" href="/features/transcription-modes">
+    Configure your transcription provider and models
+  </Card>
+  
+  <Card title="Basic Dictation" icon="microphone" href="/features/dictation">
+    Master the fundamentals of OpenWhispr dictation
+  </Card>
+</CardGroup>

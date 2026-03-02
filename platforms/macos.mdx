@@ -1,0 +1,343 @@
+---
+title: macOS Installation & Setup
+description: Complete guide for installing and configuring OpenWhispr on macOS 10.15 and later
+---
+
+## System Requirements
+
+<Info>
+  OpenWhispr requires **macOS 10.15 (Catalina)** or later.
+</Info>
+
+### Hardware Requirements
+- **Processor**: Intel x64 or Apple Silicon (arm64)
+- **RAM**: 4GB minimum (8GB recommended for local transcription)
+- **Disk Space**: 500MB for app + up to 3GB for local Whisper models
+
+### Software Requirements
+- **Node.js 18+** (for building from source)
+- **Xcode Command Line Tools** (for Globe key support): Install with `xcode-select --install`
+
+## Installation Methods
+
+<Tabs>
+  <Tab title="Binary Release (Recommended)">
+    <Steps>
+      <Step title="Download the latest release">
+        Download the `.dmg` or `.zip` file from [GitHub Releases](https://github.com/OpenWhispr/openwhispr/releases/latest)
+        - **Apple Silicon (M1/M2/M3)**: Choose the `arm64` version
+        - **Intel Macs**: Choose the `x64` version
+      </Step>
+
+      <Step title="Install the app">
+        **DMG method**:
+        1. Open the downloaded `.dmg` file
+        2. Drag OpenWhispr to your Applications folder
+        3. Eject the disk image
+
+        **ZIP method**:
+        1. Extract the `.zip` archive
+        2. Move OpenWhispr.app to your Applications folder
+      </Step>
+
+      <Step title="Open the app">
+        <Warning>
+          On first launch, you may see a security warning for unsigned apps. Right-click the app and select **Open** to bypass Gatekeeper.
+        </Warning>
+
+        For signed releases, simply double-click to open.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="Build from Source">
+    <Steps>
+      <Step title="Clone the repository">
+        ```bash
+        git clone https://github.com/OpenWhispr/openwhispr.git
+        cd openwhispr
+        ```
+      </Step>
+
+      <Step title="Install dependencies">
+        ```bash
+        npm install
+        ```
+      </Step>
+
+      <Step title="Build for personal use (unsigned)">
+        ```bash
+        npm run pack
+        ```
+        
+        The app will be in `dist/mac-arm64/OpenWhispr.app` (Apple Silicon) or `dist/mac-x64/OpenWhispr.app` (Intel).
+      </Step>
+
+      <Step title="Optional: Build production release (requires signing)">
+        ```bash
+        npm run build:mac
+        ```
+        
+        <Note>
+          Requires an Apple Developer account and code signing certificates.
+        </Note>
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Required Permissions
+
+### Microphone Access
+
+OpenWhispr needs microphone access for voice recording.
+
+<Steps>
+  <Step title="Grant permission when prompted">
+    macOS will automatically prompt for microphone access on first use.
+  </Step>
+
+  <Step title="Manual configuration">
+    If you accidentally denied access:
+    1. Open **System Settings** → **Privacy & Security** → **Microphone**
+    2. Enable the checkbox next to OpenWhispr
+    3. Restart the app
+  </Step>
+</Steps>
+
+<Tip>
+  The app provides a button to open microphone settings directly from the Control Panel.
+</Tip>
+
+### Accessibility Permissions (Required for Auto-Paste)
+
+<Warning>
+  Accessibility permissions are **required** for automatic text pasting. Without this, text will only be copied to clipboard.
+</Warning>
+
+OpenWhispr uses AppleScript and CGEvent to simulate the `Cmd+V` keystroke after transcription.
+
+<Steps>
+  <Step title="Grant accessibility permission">
+    1. Open **System Settings** → **Privacy & Security** → **Accessibility**
+    2. Click the lock icon and enter your password
+    3. Click **+** to add OpenWhispr
+    4. Enable the checkbox next to OpenWhispr
+    5. Restart OpenWhispr
+  </Step>
+
+  <Step title="Troubleshooting stuck permissions">
+    If you've rebuilt or reinstalled OpenWhispr and pasting still doesn't work:
+
+    <Accordion title="Fix for stuck permissions">
+      1. Open **System Settings** → **Privacy & Security** → **Accessibility**
+      2. Remove **ALL** old OpenWhispr entries (and any "Electron" entries)
+      3. Click **+** and add the **new** OpenWhispr.app
+      4. Enable the checkbox
+      5. Restart OpenWhispr
+
+      <Info>
+        This is common during development when rebuilding the app. macOS caches the old app signature.
+      </Info>
+    </Accordion>
+  </Step>
+</Steps>
+
+## macOS-Specific Features
+
+### Globe/Fn Key Support
+
+<Info>
+  OpenWhispr supports the **Globe (Fn)** key as a hardware-level dictation trigger on macOS.
+</Info>
+
+This feature uses a native Swift binary (`macos-globe-listener`) that monitors the Globe key press.
+
+**How it works:**
+- The Globe key listener runs as a background process
+- Requires Xcode Command Line Tools to be installed
+- Set as default hotkey on macOS (can be changed in Settings)
+- Alternative hotkeys: Any Electron accelerator (e.g., `Cmd+Shift+K`)
+
+**Installation requirement:**
+```bash
+xcode-select --install
+```
+
+### AppleScript-Based Clipboard Integration
+
+OpenWhispr uses two methods for automatic pasting:
+
+1. **CGEvent API** (Primary method via `macos-fast-paste` binary)
+   - Simulates `Cmd+V` using Core Graphics Events
+   - Fastest and most reliable method
+   - Requires accessibility permissions
+
+2. **AppleScript** (Fallback method)
+   - Uses `osascript` to send System Events keystrokes
+   - Command: `tell application "System Events" to key code 9 using command down`
+   - Also requires accessibility permissions
+
+<CodeGroup>
+```swift Swift (macos-fast-paste)
+import Cocoa
+import Carbon
+
+// Simulates Cmd+V using CGEvent
+let vKeyDown = CGEvent(keyboardEventSource: nil, virtualKey: 0x09, keyDown: true)
+let vKeyUp = CGEvent(keyboardEventSource: nil, virtualKey: 0x09, keyDown: false)
+vKeyDown?.flags = .maskCommand
+vKeyUp?.flags = .maskCommand
+vKeyDown?.post(tap: .cghidEventTap)
+vKeyUp?.post(tap: .cghidEventTap)
+```
+
+```bash AppleScript (Fallback)
+osascript -e 'tell application "System Events" to key code 9 using command down'
+```
+</CodeGroup>
+
+### Clipboard Restore Behavior
+
+OpenWhispr temporarily replaces your clipboard content to paste transcribed text, then **automatically restores** the original clipboard after 450ms.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Text is copied but not pasted automatically">
+    **Cause**: Missing or stuck accessibility permissions.
+
+    **Solution**:
+    1. Check accessibility permissions in System Settings
+    2. Remove old OpenWhispr entries
+    3. Add the current app and enable permissions
+    4. Restart OpenWhispr
+
+    **Manual paste**: Use `Cmd+V` if auto-paste fails.
+  </Accordion>
+
+  <Accordion title="Globe key not working">
+    **Cause**: Xcode Command Line Tools not installed.
+
+    **Solution**:
+    ```bash
+    xcode-select --install
+    ```
+
+    Restart OpenWhispr after installation.
+  </Accordion>
+
+  <Accordion title="App shows security warning on launch">
+    **Cause**: App is not signed with an Apple Developer certificate (common for personal builds).
+
+    **Solution**:
+    1. Right-click OpenWhispr.app
+    2. Select **Open**
+    3. Click **Open** in the security dialog
+
+    <Info>
+      Official releases from GitHub are signed and notarized.
+    </Info>
+  </Accordion>
+
+  <Accordion title="Microphone not detected">
+    **Solution**:
+    1. Open **System Settings** → **Sound** → **Input**
+    2. Select the correct microphone
+    3. Test the input level
+    4. Restart OpenWhispr
+
+    The app provides a direct button to open sound settings.
+  </Accordion>
+
+  <Accordion title="Local Whisper models not downloading">
+    **Check disk space**: Whisper models range from 75MB (tiny) to 3GB (large).
+
+    **Models location**: `~/.cache/openwhispr/whisper-models/`
+
+    **Manual cleanup**:
+    ```bash
+    rm -rf ~/.cache/openwhispr/whisper-models
+    ```
+
+    Or use the in-app cleanup: **Settings → General → Remove Downloaded Models**
+  </Accordion>
+
+  <Accordion title="Hotkey conflicts with other apps">
+    **Solution**: Change the hotkey in **Settings → Hotkeys**.
+
+    **Suggested alternatives**:
+    - `Control+Alt`
+    - `Command+Shift+Space`
+    - `F8` or `F9`
+  </Accordion>
+</AccordionGroup>
+
+## Performance Optimization
+
+### Local Transcription Performance
+
+<Tip>
+  **Recommended model**: `base` - Best balance of speed and accuracy (~142MB)
+</Tip>
+
+**Model comparison**:
+- `tiny`: ~75MB, fastest, lowest quality
+- `base`: ~142MB, recommended balance ⭐
+- `small`: ~466MB, better quality
+- `medium`: ~1.5GB, high quality
+- `large`: ~3GB, best quality
+- `turbo`: ~1.6GB, fast with good quality
+
+### Apple Silicon Optimization
+
+OpenWhispr includes native arm64 binaries for:
+- whisper.cpp (speech-to-text)
+- llama.cpp server (local AI processing)
+- sherpa-onnx (NVIDIA Parakeet models)
+- macos-fast-paste (clipboard integration)
+- macos-globe-listener (Globe key detection)
+
+**Performance on Apple Silicon is significantly faster than Intel Macs for local transcription.**
+
+## Uninstallation
+
+<Steps>
+  <Step title="Delete the app">
+    Drag OpenWhispr.app from Applications to Trash.
+  </Step>
+
+  <Step title="Remove cached models (optional)">
+    ```bash
+    rm -rf ~/.cache/openwhispr
+    ```
+
+    Or use Finder:
+    1. Press `Cmd+Shift+G`
+    2. Enter `~/.cache/openwhispr`
+    3. Delete the folder
+  </Step>
+
+  <Step title="Remove app data (optional)">
+    ```bash
+    rm -rf ~/Library/Application\ Support/OpenWhispr
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configure Settings" icon="gear" href="/configuration/api-keys">
+    Set up API keys, choose models, and customize hotkeys
+  </Card>
+  <Card title="Choose Processing Method" icon="brain" href="/features/transcription-modes">
+    Compare local vs cloud transcription options
+  </Card>
+  <Card title="Troubleshooting Guide" icon="wrench" href="/advanced/troubleshooting">
+    Solutions for common macOS issues
+  </Card>
+  <Card title="Keyboard Shortcuts" icon="keyboard" href="/configuration/hotkeys">
+    Master hotkeys and activation modes
+  </Card>
+</CardGroup>

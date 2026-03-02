@@ -1,0 +1,407 @@
+---
+title: "Custom Dictionary"
+description: "Improve transcription accuracy for names, technical terms, and specialized vocabulary"
+---
+
+The Custom Dictionary feature helps OpenWhispr correctly transcribe words that are commonly misrecognized, such as uncommon names, technical jargon, brand names, and domain-specific terminology.
+
+## What Is the Custom Dictionary?
+
+The Custom Dictionary is a list of words and phrases that you provide to the speech recognition model as context hints. When you add words to your dictionary:
+
+1. **Words are sent as context** to the transcription model (Whisper or cloud API)
+2. **Model is more likely to recognize** these specific words correctly
+3. **Accuracy improves** for specialized vocabulary in your dictations
+4. **Works with all transcription modes** (Cloud, BYOK, and Local)
+
+<Info>
+  Your agent name is automatically added to the dictionary and cannot be removed to ensure it's always recognized during AI commands.
+</Info>
+
+## Why Use a Custom Dictionary?
+
+Speech recognition models are trained on general language but may struggle with:
+
+<CardGroup cols={2}>
+  <Card title="Uncommon Names" icon="user">
+    People: "Xanthe", "Sergey", "Niamh"
+    Places: "Reykjavik", "Bruges", "Kyoto"
+  </Card>
+  
+  <Card title="Technical Jargon" icon="code">
+    Software: "Kubernetes", "PostgreSQL", "OAuth", "gRPC"
+    Medical: "hypertension", "electrocardiogram", "acetaminophen"
+  </Card>
+  
+  <Card title="Brand Names" icon="briefcase">
+    Companies: "OpenWhispr", "Anthropic", "Supabase"
+    Products: "ChatGPT", "Cloudflare", "Vercel"
+  </Card>
+  
+  <Card title="Domain Terms" icon="book">
+    Legal: "amortization", "indemnification", "litigant"
+    Scientific: "polymerase", "mitochondrial", "chromatography"
+  </Card>
+</CardGroup>
+
+## How It Works
+
+### Technical Implementation
+
+When you dictate with a custom dictionary:
+
+<Steps>
+  <Step title="Words Combined">
+    All dictionary words are joined into a single string
+  </Step>
+  
+  <Step title="Sent as Prompt">
+    This string is passed as the `prompt` parameter to the Whisper API or whisper.cpp
+  </Step>
+  
+  <Step title="Context Provided">
+    The model uses these words as context hints during transcription
+  </Step>
+  
+  <Step title="Better Recognition">
+    Words in the prompt are more likely to be recognized correctly in your speech
+  </Step>
+</Steps>
+
+<Info>
+  The Whisper `prompt` parameter provides context hints to the model, making it bias toward recognizing these specific words when they appear in your audio.
+</Info>
+
+## Adding Words to Your Dictionary
+
+### From Settings
+
+<Steps>
+  <Step title="Open Settings">
+    Navigate to **Settings → Dictionary** in the Control Panel
+  </Step>
+  
+  <Step title="Enter Word or Phrase">
+    Type a word in the input field (e.g., "Kubernetes")
+  </Step>
+  
+  <Step title="Add to Dictionary">
+    Press **Enter** or click the arrow button to add
+  </Step>
+  
+  <Step title="Add Multiple at Once">
+    Separate words with commas: "OpenWhispr, PostgreSQL, Vercel"
+  </Step>
+</Steps>
+
+### Auto-Learn Feature
+
+OpenWhispr can automatically learn corrections you make:
+
+<Info>
+  When enabled (default), OpenWhispr detects when you manually correct transcribed text and automatically adds the corrected words to your dictionary.
+</Info>
+
+**How it works**:
+1. OpenWhispr transcribes "cube or net ease" (wrong)
+2. You manually type "Kubernetes" (correct)
+3. OpenWhispr detects the correction
+4. "Kubernetes" is added to your dictionary
+5. A toast notification appears with **Undo** option
+
+<Tip>
+  If OpenWhispr learns a word you didn't intend, click **Undo** in the toast notification that appears after auto-learning.
+</Tip>
+
+## Managing Your Dictionary
+
+### Viewing All Words
+
+In **Settings → Dictionary**, you'll see:
+- All words in your dictionary displayed as tags
+- Word count in the header
+- Your agent name (marked as auto-managed, cannot be removed)
+
+### Removing Words
+
+<Steps>
+  <Step title="Find the Word">
+    Scroll through your dictionary to find the word you want to remove
+  </Step>
+  
+  <Step title="Hover to Reveal X">
+    Hover over the word tag to reveal the remove button
+  </Step>
+  
+  <Step title="Click X to Remove">
+    Click the small X icon to remove the word
+  </Step>
+</Steps>
+
+<Note>
+  You cannot remove your agent name — it's automatically managed to ensure AI commands work correctly.
+</Note>
+
+### Clearing All Words
+
+To start fresh:
+
+1. Click **Clear All** in the top-right of the dictionary view
+2. Confirm the action in the dialog
+3. All words except your agent name will be removed
+
+## Examples of Words to Add
+
+<Tabs>
+  <Tab title="Software Development">
+    ```
+    PostgreSQL
+    Kubernetes
+    OAuth
+    gRPC
+    TypeScript
+    Supabase
+    Vercel
+    Cloudflare
+    JWT
+    WebSocket
+    Redis
+    Elasticsearch
+    MongoDB
+    GraphQL
+    ```
+  </Tab>
+  
+  <Tab title="Medical/Healthcare">
+    ```
+    hypertension
+    electrocardiogram
+    acetaminophen
+    dyspnea
+    hemoglobin
+    nephrology
+    osteoporosis
+    bronchodilator
+    anticoagulant
+    thrombosis
+    ```
+  </Tab>
+  
+  <Tab title="Business/Finance">
+    ```
+    amortization
+    diversification
+    liquidity
+    capitalization
+    depreciation
+    arbitrage
+    syndication
+    securitization
+    receivables
+    liabilities
+    ```
+  </Tab>
+  
+  <Tab title="Names & Places">
+    ```
+    Xanthe
+    Siobhan
+    Niamh
+    Sergey
+    Reykjavik
+    Bruges
+    Kyoto
+    Lisbon
+    Auckland
+    ```
+  </Tab>
+  
+  <Tab title="Brand Names">
+    ```
+    OpenWhispr
+    Anthropic
+    OpenAI
+    ChatGPT
+    Mistral
+    Gemini
+    Claude
+    Groq
+    Replicate
+    Hugging Face
+    ```
+  </Tab>
+  
+  <Tab title="Scientific">
+    ```
+    polymerase
+    chromatography
+    spectroscopy
+    mitochondrial
+    cytoplasm
+    photosynthesis
+    proteomics
+    genomics
+    thermodynamics
+    bioreactor
+    ```
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start Small" icon="seedling">
+    Add 10-20 words you use frequently rather than hundreds of obscure terms
+  </Card>
+  
+  <Card title="Use Exact Spelling" icon="check-circle">
+    Enter words exactly as you want them transcribed (including capitalization)
+  </Card>
+  
+  <Card title="Add as Needed" icon="plus">
+    When you notice a word being misrecognized, add it immediately
+  </Card>
+  
+  <Card title="Review Periodically" icon="refresh-cw">
+    Remove words you no longer use to keep the dictionary focused
+  </Card>
+</CardGroup>
+
+### What to Add
+
+✅ **Do add**:
+- Words you use frequently in dictation
+- Words that are consistently misrecognized
+- Proper nouns (names, places, brands)
+- Technical terms in your field
+- Acronyms and abbreviations
+
+❌ **Don't add**:
+- Common English words (the model already knows these)
+- Phrases longer than 3-4 words (use individual words instead)
+- Hundreds of words you rarely use (clutters the prompt)
+- Misspellings or alternate spellings (use the correct form)
+
+## How Dictionary Works with Different Modes
+
+<Tabs>
+  <Tab title="OpenWhispr Cloud">
+    Dictionary words are sent with your audio to the cloud transcription API as prompt context.
+    
+    **Limitations**: None — works seamlessly
+  </Tab>
+  
+  <Tab title="BYOK (Bring Your Own Key)">
+    Dictionary words are sent to your chosen provider (OpenAI, Groq, Mistral) as the `prompt` parameter.
+    
+    **Limitations**: 
+    - OpenAI: 224 token limit for prompt (~150-200 words)
+    - Groq: Similar limitations
+    - Mistral: Check API documentation
+  </Tab>
+  
+  <Tab title="Local Processing">
+    Dictionary words are passed to whisper.cpp or sherpa-onnx as the `--prompt` parameter.
+    
+    **Limitations**: 
+    - Whisper.cpp: 224 token limit
+    - Parakeet (sherpa-onnx): No prompt support (dictionary not used)
+  </Tab>
+</Tabs>
+
+<Warning>
+  If you add too many words (200+), some providers may truncate the prompt. Keep your dictionary focused on frequently used terms.
+</Warning>
+
+## Troubleshooting
+
+<Accordion title="Word still being misrecognized">
+  **Possible causes**:
+  1. Word pronunciation is too similar to another word
+  2. Background noise interfering with recognition
+  3. Word is very uncommon even with dictionary hint
+  
+  **Solutions**:
+  - Speak more clearly and slowly
+  - Reduce background noise
+  - Try adding related words (e.g., add "Kubernetes cluster" not just "Kubernetes")
+  - Consider editing text manually for very rare terms
+</Accordion>
+
+<Accordion title="Dictionary not helping with local Parakeet">
+  NVIDIA Parakeet (sherpa-onnx) does not support the prompt/context feature that Whisper uses. Dictionary words are not used with Parakeet.
+  
+  **Solution**: Switch to Whisper models for dictionary support
+</Accordion>
+
+<Accordion title="Can't remove my agent name">
+  This is by design — your agent name must remain in the dictionary to ensure AI commands are recognized correctly.
+  
+  **Solution**: To change your agent name, go to **Settings → Intelligence → Agent Name**
+</Accordion>
+
+<Accordion title="Auto-learn adding wrong words">
+  If auto-learn detects corrections you didn't intend:
+  1. Click **Undo** in the toast notification immediately
+  2. Manually remove the word from Settings → Dictionary
+  3. Consider disabling auto-learn in **Settings → Dictionary** (if this setting exists)
+</Accordion>
+
+## Privacy & Storage
+
+<Info>
+  Your custom dictionary is stored **locally** in your browser's localStorage and never sent to OpenWhispr servers.
+</Info>
+
+- **Storage location**: Browser localStorage under key `customDictionary`
+- **Sync**: Not synced across devices (local to each installation)
+- **Backup**: Export settings to back up your dictionary (future feature)
+- **Privacy**: Words are only sent to transcription APIs as context, not logged or stored by providers
+
+## Advanced: Dictionary Storage Format
+
+For developers and advanced users, the dictionary is stored as a JSON array:
+
+```json
+["OpenWhispr", "Kubernetes", "PostgreSQL", "Anthropic", "YourAgentName"]
+```
+
+You can manually edit this in your browser's developer console:
+```javascript
+localStorage.getItem('customDictionary')
+localStorage.setItem('customDictionary', '["word1", "word2"]')
+```
+
+<Warning>
+  Manual editing is for advanced users only. Always back up your settings first.
+</Warning>
+
+## Limits and Considerations
+
+| Aspect | Limit | Notes |
+|--------|-------|-------|
+| **Max words** | ~200 recommended | API prompt limits vary by provider |
+| **Max characters per word** | No hard limit | Keep words/phrases concise |
+| **Storage** | localStorage | ~5MB total browser storage |
+| **Sync** | Not available | Local to each device |
+| **Auto-learn** | Enabled by default | Can be toggled in settings |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="AI Processing" icon="sparkles" href="/features/ai-processing">
+    Use your agent name in commands for AI-enhanced dictation
+  </Card>
+  
+  <Card title="Transcription Modes" icon="settings" href="/features/transcription-modes">
+    Choose the best mode for your dictionary use case
+  </Card>
+  
+  <Card title="Notes System" icon="file-text" href="/features/notes-system">
+    Apply dictionary improvements to your voice notes
+  </Card>
+  
+  <Card title="Basic Dictation" icon="microphone" href="/features/dictation">
+    Master the fundamentals of OpenWhispr dictation
+  </Card>
+</CardGroup>

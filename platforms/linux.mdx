@@ -1,0 +1,715 @@
+---
+title: Linux Installation & Setup
+description: Complete guide for installing and configuring OpenWhispr on Linux distributions with X11 and Wayland support
+---
+
+## System Requirements
+
+<Info>
+  OpenWhispr supports most modern Linux distributions with **X11** or **Wayland** display servers.
+</Info>
+
+### Hardware Requirements
+- **Processor**: x64 (64-bit)
+- **RAM**: 4GB minimum (8GB recommended for local transcription)
+- **Disk Space**: 500MB for app + up to 3GB for local Whisper models
+
+### Tested Distributions
+- **Ubuntu** 20.04+ / **Linux Mint** / **Pop!_OS**
+- **Debian** 11+
+- **Fedora** 36+
+- **Arch Linux** / **Manjaro**
+- **openSUSE** Leap / Tumbleweed
+- **GNOME**, **KDE Plasma**, **Sway**, **Hyprland** desktop environments
+
+### Software Requirements
+- **Node.js 18+** (for building from source)
+- **GCC** and development libraries (for compiling native binaries)
+
+## Installation Methods
+
+OpenWhispr provides **multiple package formats** for maximum compatibility:
+
+<Tabs>
+  <Tab title="DEB (Debian/Ubuntu)">
+    <Steps>
+      <Step title="Download the .deb package">
+        Download from [GitHub Releases](https://github.com/OpenWhispr/openwhispr/releases/latest):
+        ```bash
+        wget https://github.com/OpenWhispr/openwhispr/releases/download/v1.5.5/OpenWhispr-1.5.5-linux-x64.deb
+        ```
+      </Step>
+
+      <Step title="Install with apt">
+        ```bash
+        sudo apt install ./OpenWhispr-1.5.5-linux-x64.deb
+        ```
+
+        This automatically installs recommended dependencies:
+        - `ydotool` (required for Wayland paste)
+        - `xdotool` (suggested for X11 paste)
+        - `wtype` (suggested for Wayland paste)
+        - `wl-clipboard` (recommended for Wayland clipboard)
+      </Step>
+
+      <Step title="Launch OpenWhispr">
+        ```bash
+        open-whispr
+        ```
+        Or find it in your application menu.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="RPM (Fedora/RHEL)">
+    <Steps>
+      <Step title="Download the .rpm package">
+        ```bash
+        wget https://github.com/OpenWhispr/openwhispr/releases/download/v1.5.5/OpenWhispr-1.5.5-linux-x64.rpm
+        ```
+      </Step>
+
+      <Step title="Install with dnf">
+        ```bash
+        sudo dnf install ./OpenWhispr-1.5.5-linux-x64.rpm
+        ```
+
+        Or with yum:
+        ```bash
+        sudo yum install ./OpenWhispr-1.5.5-linux-x64.rpm
+        ```
+      </Step>
+
+      <Step title="Install dependencies">
+        ```bash
+        sudo dnf install ydotool xdotool wtype wl-clipboard
+        sudo systemctl enable --now ydotoold
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="AppImage">
+    <Steps>
+      <Step title="Download the AppImage">
+        ```bash
+        wget https://github.com/OpenWhispr/openwhispr/releases/download/v1.5.5/OpenWhispr-1.5.5-linux-x64.AppImage
+        ```
+      </Step>
+
+      <Step title="Make it executable">
+        ```bash
+        chmod +x OpenWhispr-1.5.5-linux-x64.AppImage
+        ```
+      </Step>
+
+      <Step title="Run the app">
+        ```bash
+        ./OpenWhispr-1.5.5-linux-x64.AppImage
+        ```
+      </Step>
+    </Steps>
+
+    <Tip>
+      AppImage is portable and doesn't require installation. Perfect for testing or running from USB drives.
+    </Tip>
+  </Tab>
+
+  <Tab title="TAR.GZ (Universal)">
+    <Steps>
+      <Step title="Download and extract">
+        ```bash
+        wget https://github.com/OpenWhispr/openwhispr/releases/download/v1.5.5/OpenWhispr-1.5.5-linux-x64.tar.gz
+        tar -xzf OpenWhispr-1.5.5-linux-x64.tar.gz
+        cd OpenWhispr-1.5.5/
+        ```
+      </Step>
+
+      <Step title="Run the app">
+        ```bash
+        ./openwhispr
+        ```
+      </Step>
+    </Steps>
+
+    <Note>
+      No root privileges required. Works on any distribution.
+    </Note>
+  </Tab>
+
+  <Tab title="Flatpak (Sandboxed)">
+    <Steps>
+      <Step title="Install Flatpak runtime">
+        ```bash
+        flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+        flatpak install --user -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
+        ```
+      </Step>
+
+      <Step title="Install OpenWhispr">
+        ```bash
+        flatpak install --user ./OpenWhispr-1.5.5-linux-x64.flatpak
+        ```
+      </Step>
+
+      <Step title="Run the app">
+        ```bash
+        flatpak run com.herotools.openwispr
+        ```
+      </Step>
+    </Steps>
+
+    <Warning>
+      Flatpak includes sandboxing with explicit permissions for microphone, clipboard, and file access.
+    </Warning>
+  </Tab>
+
+  <Tab title="Build from Source">
+    <Steps>
+      <Step title="Clone the repository">
+        ```bash
+        git clone https://github.com/OpenWhispr/openwhispr.git
+        cd openwhispr
+        ```
+      </Step>
+
+      <Step title="Install build dependencies">
+        **Debian/Ubuntu:**
+        ```bash
+        sudo apt install gcc libx11-dev libxtst-dev
+        ```
+
+        **Fedora/RHEL:**
+        ```bash
+        sudo dnf install gcc libX11-devel libXtst-devel
+        ```
+
+        **Arch:**
+        ```bash
+        sudo pacman -S gcc libx11 libxtst
+        ```
+      </Step>
+
+      <Step title="Install Node.js dependencies">
+        ```bash
+        npm install
+        ```
+      </Step>
+
+      <Step title="Build the app">
+        ```bash
+        npm run build:linux
+        ```
+
+        Output: `dist/OpenWhispr-*-linux-x64.{AppImage,deb,rpm,tar.gz}`
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Clipboard Paste Tools
+
+OpenWhispr requires at least one paste tool for automatic text insertion. The app tries methods in this order:
+
+### Native Binary (Primary Method)
+
+<Info>
+  OpenWhispr includes a **native C binary** (`linux-fast-paste`) that handles clipboard pasting on both X11 and Wayland.
+</Info>
+
+**How it works:**
+- **X11**: Uses XTest extension to synthesize `Ctrl+V` keystrokes directly
+- **Wayland (uinput)**: Creates a virtual keyboard via Linux `uinput` subsystem
+- **Wayland (portal)**: Uses RemoteDesktop D-Bus portal on GNOME/KDE for native window targeting
+- **Terminal detection**: Automatically detects 20+ terminal emulators and uses `Ctrl+Shift+V`
+
+<CodeGroup>
+```c X11 Method (XTest)
+#include <X11/extensions/XTest.h>
+
+Display *dpy = XOpenDisplay(NULL);
+
+// Press Ctrl
+XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, XK_Control_L), True, 0);
+
+// Press V
+XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, XK_v), True, 0);
+XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, XK_v), False, 0);
+
+// Release Ctrl
+XTestFakeKeyEvent(dpy, XKeysymToKeycode(dpy, XK_Control_L), False, 0);
+
+XFlush(dpy);
+```
+
+```c Wayland Method (uinput)
+#include <linux/uinput.h>
+
+int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
+
+// Setup virtual keyboard
+ioctl(fd, UI_SET_EVBIT, EV_KEY);
+ioctl(fd, UI_SET_KEYBIT, KEY_LEFTCTRL);
+ioctl(fd, UI_SET_KEYBIT, KEY_V);
+
+// Emit key events
+struct input_event ev;
+ev.type = EV_KEY;
+ev.code = KEY_LEFTCTRL;
+ev.value = 1;  // Press
+write(fd, &ev, sizeof(ev));
+```
+</CodeGroup>
+
+**Compilation** (automatic during build):
+```bash
+npm run compile:linux-paste
+```
+
+**Detected terminals** (auto-uses `Ctrl+Shift+V`):
+- gnome-terminal, konsole, kitty, alacritty, wezterm, foot
+- terminator, tilix, xterm, urxvt, st, yakuake
+- guake, tilda, hyper, tabby, sakura, warp
+- termius, ghostty
+
+### Fallback Tools (External Dependencies)
+
+<Note>
+  If the native binary fails, OpenWhispr falls back to system tools in this order:
+</Note>
+
+<Tabs>
+  <Tab title="X11">
+    **xdotool** (recommended):
+    ```bash
+    # Debian/Ubuntu
+    sudo apt install xdotool
+
+    # Fedora/RHEL
+    sudo dnf install xdotool
+
+    # Arch
+    sudo pacman -S xdotool
+    ```
+
+    <Info>
+      xdotool is the primary fallback for X11. It's reliable and widely supported.
+    </Info>
+  </Tab>
+
+  <Tab title="Wayland (wlroots)">
+    **wtype** (for Sway, Hyprland, etc.):
+    ```bash
+    # Debian/Ubuntu
+    sudo apt install wtype
+
+    # Fedora/RHEL
+    sudo dnf install wtype
+
+    # Arch
+    sudo pacman -S wtype
+    ```
+
+    <Tip>
+      wtype works best on wlroots-based compositors (Sway, Hyprland, River, Wayfire).
+    </Tip>
+  </Tab>
+
+  <Tab title="Wayland (GNOME/KDE)">
+    **ydotool** (universal Wayland solution):
+    ```bash
+    # Debian/Ubuntu
+    sudo apt install ydotool
+    sudo systemctl enable --now ydotoold
+
+    # Fedora/RHEL
+    sudo dnf install ydotool
+    sudo systemctl enable --now ydotoold
+
+    # Arch
+    sudo pacman -S ydotool
+    sudo systemctl enable --now ydotoold
+    ```
+
+    <Warning>
+      The `ydotoold` daemon **must be running** for ydotool to work. Check with: `systemctl status ydotoold`
+    </Warning>
+
+    **ydotool version compatibility:**
+    - **0.1.x** (Ubuntu 24.04): Uses key names (`ctrl+v`)
+    - **1.0.x** (Arch): Uses raw keycodes (`29:1`, `47:1`)
+
+    OpenWhispr auto-detects the version and uses the correct syntax.
+  </Tab>
+</Tabs>
+
+### Recommended Setup by Desktop Environment
+
+| Desktop | Recommended Tools | Fallback |
+|---------|------------------|----------|
+| **X11** (GNOME, KDE, XFCE) | `xdotool` | Native `linux-fast-paste` |
+| **GNOME Wayland** | Native `linux-fast-paste --portal` | `ydotool` + `ydotoold` |
+| **KDE Wayland** | Native `linux-fast-paste --portal` | `ydotool` + `ydotoold` |
+| **Sway / Hyprland** | `wtype` | Native `linux-fast-paste --uinput` |
+| **XWayland apps** | `xdotool` | Native `linux-fast-paste` (XTest) |
+
+### Clipboard Sharing (Wayland)
+
+<Tip>
+  Install `wl-clipboard` for reliable clipboard sharing between Wayland apps:
+</Tip>
+
+```bash
+# Debian/Ubuntu
+sudo apt install wl-clipboard
+
+# Fedora/RHEL
+sudo dnf install wl-clipboard
+
+# Arch
+sudo pacman -S wl-clipboard
+```
+
+## GNOME Wayland Global Shortcuts
+
+<Info>
+  On **GNOME Wayland**, Electron's `globalShortcut` API doesn't work. OpenWhispr uses **native GNOME shortcuts** via D-Bus.
+</Info>
+
+### How It Works
+
+1. OpenWhispr creates a D-Bus service at `com.openwhispr.App`
+2. Registers a custom GNOME keybinding via `gsettings`
+3. GNOME triggers `dbus-send` command when hotkey is pressed
+4. D-Bus service calls the `Toggle()` method, starting/stopping recording
+
+<CodeGroup>
+```javascript D-Bus Service (gnomeShortcut.js)
+const { MessageBus } = require('dbus-next');
+
+class GnomeShortcutManager {
+  async initDBusService(callback) {
+    this.bus = MessageBus.connectSession();
+    
+    // Register D-Bus interface
+    const iface = {
+      name: 'com.openwhispr.App',
+      methods: {
+        Toggle: {
+          inSignature: '',
+          outSignature: '',
+          fn: () => {
+            callback();  // Trigger recording
+          }
+        }
+      }
+    };
+    
+    await this.bus.export('/com/openwhispr/App', iface);
+    await this.bus.requestName('com.openwhispr.App');
+  }
+}
+```
+
+```bash gsettings (GNOME keybinding)
+# Register custom shortcut
+gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/openwhispr/']"
+
+# Set hotkey (e.g., Alt+R)
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/openwhispr/ binding '<Alt>r'
+
+# Set D-Bus command
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/openwhispr/ command 'dbus-send --session --dest=com.openwhispr.App --type=method_call /com/openwhispr/App com.openwhispr.App.Toggle'
+```
+</CodeGroup>
+
+### Limitations
+
+<Warning>
+  **Push-to-talk mode is NOT available** on GNOME Wayland. GNOME shortcuts only fire a single toggle event (no key-up detection).
+</Warning>
+
+The app automatically uses **tap-to-talk mode** on GNOME Wayland.
+
+### Hotkey Format Conversion
+
+| Electron Format | GNOME Format |
+|----------------|-------------|
+| `Alt+R` | `<Alt>r` |
+| `Control+Shift+Space` | `<Control><Shift>space` |
+| `CommandOrControl+K` | `<Control>k` |
+| Backtick (`) | `grave` |
+
+### Viewing Registered Shortcuts
+
+Your OpenWhispr hotkey appears in:
+**GNOME Settings** → **Keyboard** → **Keyboard Shortcuts** → **Custom Shortcuts**
+
+You can modify or remove it there (the app will re-register on next launch).
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Text is copied but not pasted automatically">
+    **Cause**: Missing paste tools or daemon not running.
+
+    **Solution**:
+
+    **For X11**:
+    ```bash
+    sudo apt install xdotool  # Debian/Ubuntu
+    sudo dnf install xdotool  # Fedora
+    ```
+
+    **For GNOME/KDE Wayland**:
+    ```bash
+    sudo apt install ydotool
+    sudo systemctl enable --now ydotoold
+    sudo systemctl status ydotoold  # Verify it's running
+    ```
+
+    **For Sway/Hyprland**:
+    ```bash
+    sudo apt install wtype
+    ```
+
+    **Manual paste**: Use `Ctrl+V` (text is always copied to clipboard).
+  </Accordion>
+
+  <Accordion title="ydotool paste not working">
+    **Cause**: `ydotoold` daemon not running.
+
+    **Solution**:
+    ```bash
+    # Check daemon status
+    systemctl status ydotoold
+
+    # Start daemon
+    sudo systemctl start ydotoold
+
+    # Enable on boot
+    sudo systemctl enable ydotoold
+
+    # Manual start (alternative)
+    sudo ydotoold &
+    ```
+
+    **Check socket**:
+    ```bash
+    ls -la /run/user/$(id -u)/.ydotool_socket
+    ```
+  </Accordion>
+
+  <Accordion title="Hotkey not working on GNOME Wayland">
+    **Cause**: D-Bus service failed to register or gsettings conflict.
+
+    **Check D-Bus service**:
+    ```bash
+    dbus-send --session --print-reply --dest=org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus.ListNames | grep openwhispr
+    ```
+
+    **Check registered shortcut**:
+    ```bash
+    gsettings get org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/openwhispr/ binding
+    ```
+
+    **Reset shortcut**:
+    ```bash
+    gsettings reset org.gnome.settings-daemon.plugins.media-keys custom-keybindings
+    ```
+    Then restart OpenWhispr.
+  </Accordion>
+
+  <Accordion title="Terminal paste uses Ctrl+V instead of Ctrl+Shift+V">
+    **Cause**: Terminal not detected by window class.
+
+    **Check window class**:
+    ```bash
+    xdotool getactivewindow getwindowclassname
+    ```
+
+    **Solution**: Report the terminal name in GitHub Issues to add it to the detection list.
+
+    **Workaround**: Manually paste with `Ctrl+Shift+V`.
+  </Accordion>
+
+  <Accordion title="Native paste binary compilation failed">
+    **Cause**: Missing X11 or uinput development headers.
+
+    **Solution**:
+
+    **Debian/Ubuntu**:
+    ```bash
+    sudo apt install gcc libx11-dev libxtst-dev
+    ```
+
+    **Fedora/RHEL**:
+    ```bash
+    sudo dnf install gcc libX11-devel libXtst-devel
+    ```
+
+    **Arch**:
+    ```bash
+    sudo pacman -S gcc libx11 libxtst
+    ```
+
+    Then rebuild:
+    ```bash
+    npm run compile:linux-paste
+    ```
+  </Accordion>
+
+  <Accordion title="Microphone not detected">
+    **Solution**:
+
+    **PulseAudio**:
+    ```bash
+    pavucontrol  # Graphical volume control
+    pactl list sources  # List input devices
+    ```
+
+    **PipeWire**:
+    ```bash
+    pw-top  # Monitor audio devices
+    wpctl status  # List devices
+    ```
+
+    Select the correct input device in your desktop sound settings.
+  </Accordion>
+
+  <Accordion title="Hotkey conflicts with desktop shortcuts">
+    **Solution**: Change the hotkey in **Settings → Hotkeys**.
+
+    **Suggested alternatives**:
+    - `Control+Super` (default, may conflict on some DEs)
+    - `Control+Shift+K`
+    - `Super+Shift+R`
+    - `F8` or `F9`
+
+    **Avoid**: `Super` key combinations on GNOME/KDE (often reserved for desktop actions).
+  </Accordion>
+
+  <Accordion title="Local Whisper models not downloading">
+    **Check disk space**: Models range from 75MB to 3GB.
+
+    **Models location**: `~/.cache/openwhispr/whisper-models/`
+
+    **Manual cleanup**:
+    ```bash
+    rm -rf ~/.cache/openwhispr/whisper-models
+    ```
+
+    Or use in-app: **Settings → General → Remove Downloaded Models**
+  </Accordion>
+
+  <Accordion title="uinput permission denied on Wayland">
+    **Cause**: User lacks write access to `/dev/uinput`.
+
+    **Solution**:
+
+    **Temporary fix**:
+    ```bash
+    sudo chmod 666 /dev/uinput
+    ```
+
+    **Permanent fix** (add user to `input` group):
+    ```bash
+    sudo usermod -a -G input $USER
+    ```
+    Log out and back in for changes to take effect.
+
+    **udev rule** (alternative):
+    ```bash
+    echo 'KERNEL=="uinput", MODE="0660", GROUP="input"' | sudo tee /etc/udev/rules.d/99-uinput.rules
+    sudo udevadm control --reload-rules
+    sudo udevadm trigger
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Performance Optimization
+
+### Local Transcription Performance
+
+<Tip>
+  **Recommended model**: `base` - Best balance of speed and accuracy (~142MB)
+</Tip>
+
+**Model comparison**:
+- `tiny`: ~75MB, fastest, lowest quality
+- `base`: ~142MB, recommended balance ⭐
+- `small`: ~466MB, better quality
+- `medium`: ~1.5GB, high quality
+- `large`: ~3GB, best quality
+- `turbo`: ~1.6GB, fast with good quality
+
+### GPU Acceleration
+
+For NVIDIA GPUs, build whisper.cpp with CUDA support:
+```bash
+git clone https://github.com/ggerganov/whisper.cpp
+cd whisper.cpp
+make WHISPER_CUDA=1
+```
+
+Replace the bundled binary in `resources/bin/whisper-cpp-linux-x64`.
+
+## Uninstallation
+
+<Tabs>
+  <Tab title="DEB Package">
+    ```bash
+    sudo apt remove openwhispr
+    ```
+
+    The post-remove script automatically cleans up:
+    - `~/.cache/openwhispr/whisper-models`
+    - Application shortcuts
+  </Tab>
+
+  <Tab title="RPM Package">
+    ```bash
+    sudo dnf remove openwhispr
+    # or
+    sudo yum remove openwhispr
+    ```
+  </Tab>
+
+  <Tab title="AppImage / TAR.GZ">
+    Simply delete the AppImage or extracted folder.
+
+    **Remove cached models**:
+    ```bash
+    rm -rf ~/.cache/openwhispr
+    ```
+  </Tab>
+
+  <Tab title="Flatpak">
+    ```bash
+    flatpak uninstall com.herotools.openwispr
+    ```
+  </Tab>
+</Tabs>
+
+**Remove app data**:
+```bash
+rm -rf ~/.config/OpenWhispr
+rm -rf ~/.local/share/OpenWhispr
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configure Settings" icon="gear" href="/configuration/api-keys">
+    Set up API keys, choose models, and customize hotkeys
+  </Card>
+  <Card title="Choose Processing Method" icon="brain" href="/features/transcription-modes">
+    Compare local vs cloud transcription options
+  </Card>
+  <Card title="Troubleshooting Guide" icon="wrench" href="/advanced/troubleshooting">
+    Solutions for common Linux issues
+  </Card>
+  <Card title="Keyboard Shortcuts" icon="keyboard" href="/configuration/hotkeys">
+    Master hotkeys and activation modes
+  </Card>
+</CardGroup>

@@ -1,0 +1,199 @@
+---
+title: API Overview
+description: Introduction to OpenWhispr's IPC bridge architecture and security model
+---
+
+## Architecture
+
+OpenWhispr uses a **secure IPC bridge** architecture to enable communication between the Electron renderer process (UI) and the main process (system integration).
+
+### Context Isolation
+
+OpenWhispr enforces **context isolation** for security:
+
+- The renderer process runs in a sandboxed environment
+- Direct access to Node.js APIs is disabled
+- All system operations go through the IPC bridge
+- The preload script (`preload.js`) exposes a safe API via `window.electronAPI`
+
+### IPC Bridge
+
+The preload script uses Electron's `contextBridge` to expose methods:
+
+```javascript
+const { contextBridge, ipcRenderer } = require("electron");
+
+contextBridge.exposeInMainWorld("electronAPI", {
+  saveTranscription: (text) => ipcRenderer.invoke("db-save-transcription", text),
+  // ... other methods
+});
+```
+
+### Accessing the API
+
+In your renderer code (React components, services), access the IPC methods via `window.electronAPI`:
+
+```typescript
+// Save a transcription
+const result = await window.electronAPI.saveTranscription("Hello world");
+
+// Get transcription history
+const history = await window.electronAPI.getTranscriptions(50);
+```
+
+## Available IPC Channels
+
+OpenWhispr provides IPC channels organized by feature area:
+
+### Transcription
+
+- `transcribeLocalWhisper` - Transcribe audio using local Whisper model
+- `transcribeLocalParakeet` - Transcribe audio using NVIDIA Parakeet model
+- `transcribeAudioFile` - Transcribe an audio file from disk
+- `cloudTranscribe` - Transcribe using OpenWhispr Cloud API
+
+### Database
+
+- `saveTranscription` - Save transcription to database
+- `getTranscriptions` - Get transcription history
+- `deleteTranscription` - Delete a specific transcription
+- `clearTranscriptions` - Clear all transcriptions
+- `getDictionary` - Get custom dictionary words
+- `setDictionary` - Update custom dictionary
+- `saveNote` - Save a note with metadata
+- `getNotes` - Get notes by type/folder
+- `updateNote` - Update note content
+- `deleteNote` - Delete a note
+
+### Settings & Configuration
+
+- `getOpenAIKey` - Get OpenAI API key
+- `saveOpenAIKey` - Save OpenAI API key
+- `getAnthropicKey` - Get Anthropic API key
+- `saveAnthropicKey` - Save Anthropic API key
+- `getGeminiKey` - Get Gemini API key
+- `saveGeminiKey` - Save Gemini API key
+- `getGroqKey` - Get Groq API key
+- `saveGroqKey` - Save Groq API key
+- `getMistralKey` - Get Mistral API key
+- `saveMistralKey` - Save Mistral API key
+- `getDictationKey` - Get dictation activation key
+- `saveDictationKey` - Save dictation activation key
+- `getActivationMode` - Get activation mode (tap/push)
+- `saveActivationMode` - Save activation mode
+- `updateHotkey` - Update global hotkey
+- `getAutoStartEnabled` - Check if auto-start is enabled
+- `setAutoStartEnabled` - Enable/disable auto-start
+
+### Model Management
+
+- `checkWhisperInstallation` - Check if Whisper is installed
+- `downloadWhisperModel` - Download a Whisper model
+- `listWhisperModels` - List downloaded Whisper models
+- `deleteWhisperModel` - Delete a Whisper model
+- `checkParakeetInstallation` - Check Parakeet installation
+- `downloadParakeetModel` - Download Parakeet model
+- `listParakeetModels` - List Parakeet models
+- `modelGetAll` - Get all available local models (llama.cpp)
+- `modelDownload` - Download a local reasoning model
+- `modelDelete` - Delete a local model
+
+### System Integration
+
+- `pasteText` - Paste text to active application
+- `openMicrophoneSettings` - Open system microphone settings
+- `openAccessibilitySettings` - Open accessibility settings (macOS)
+- `openExternal` - Open URL in default browser
+- `checkAccessibilityPermission` - Check clipboard permissions
+- `readClipboard` - Read clipboard content
+- `writeClipboard` - Write to clipboard
+
+### Window Management
+
+- `hideWindow` - Hide the dictation window
+- `showDictationPanel` - Show the dictation window
+- `windowMinimize` - Minimize the control panel
+- `windowMaximize` - Maximize/restore control panel
+- `windowClose` - Close the control panel
+- `appQuit` - Quit the application
+
+## Event Listeners
+
+Some IPC channels provide event listeners for real-time updates:
+
+```typescript
+// Listen for transcription events
+const cleanup = window.electronAPI.onTranscriptionAdded((transcription) => {
+  console.log("New transcription:", transcription);
+});
+
+// Clean up when component unmounts
+cleanup();
+```
+
+### Available Events
+
+- `onToggleDictation` - Dictation toggle requested
+- `onStartDictation` - Start dictation event
+- `onStopDictation` - Stop dictation event
+- `onTranscriptionAdded` - New transcription saved
+- `onTranscriptionDeleted` - Transcription deleted
+- `onNoteAdded` - New note created
+- `onNoteUpdated` - Note updated
+- `onNoteDeleted` - Note deleted
+- `onDictionaryUpdated` - Dictionary changed
+- `onNoAudioDetected` - No audio in recording
+- `onModelDownloadProgress` - Model download progress
+- `onUpdateAvailable` - App update available
+
+## Security Model
+
+### What's Exposed
+
+- Only explicitly exposed methods via `contextBridge`
+- No direct Node.js or Electron API access
+- All operations validated in main process
+
+### What's Protected
+
+- File system access (only through safe IPC methods)
+- Process spawning
+- System settings modification
+- Network requests (proxied through main process)
+
+### API Key Storage
+
+- API keys stored in environment variables and `.env` file
+- Loaded securely from main process
+- Never exposed directly to renderer
+
+## Error Handling
+
+All IPC methods return objects with success/error information:
+
+```typescript
+const result = await window.electronAPI.saveTranscription(text);
+
+if (result.success) {
+  console.log("Saved with ID:", result.id);
+} else {
+  console.error("Error:", result.error);
+}
+```
+
+## Type Safety
+
+For TypeScript users, create a declaration file:
+
+```typescript
+// src/types/electronAPI.d.ts
+interface ElectronAPI {
+  saveTranscription: (text: string) => Promise<{ success: boolean; id?: number; error?: string }>;
+  getTranscriptions: (limit?: number) => Promise<Array<Transcription>>;
+  // ... other methods
+}
+
+interface Window {
+  electronAPI: ElectronAPI;
+}
+```

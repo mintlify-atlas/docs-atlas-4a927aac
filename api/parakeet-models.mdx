@@ -1,0 +1,337 @@
+---
+title: Parakeet Models
+description: NVIDIA Parakeet ASR models for fast multilingual transcription via sherpa-onnx
+---
+
+## Overview
+
+OpenWhispr supports **NVIDIA Parakeet** models for local transcription via the sherpa-onnx runtime. Parakeet models offer:
+
+- **Fast inference** with INT8 quantization
+- **Multilingual support** (25+ languages)
+- **Automatic language detection**
+- **Privacy-first** local processing
+
+## Model Technology
+
+<ParamField path="runtime" type="string">
+  sherpa-onnx (ONNX Runtime for cross-platform inference)
+</ParamField>
+
+<ParamField path="quantization" type="string">
+  INT8 (8-bit integer quantization for efficient CPU inference)
+</ParamField>
+
+<ParamField path="framework" type="string">
+  NVIDIA NeMo Transducer (streaming ASR architecture)
+</ParamField>
+
+## Storage Location
+
+Models are cached locally at:
+
+```
+~/.cache/openwhispr/parakeet-models/
+```
+
+Each model directory contains:
+- `encoder.int8.onnx`
+- `decoder.int8.onnx`
+- `joiner.int8.onnx`
+- `tokens.txt`
+
+## Available Models
+
+### Parakeet TDT 0.6B v3 (680MB) — Recommended
+
+<ParamField path="name" type="string">
+  Parakeet TDT 0.6B
+</ParamField>
+
+<ParamField path="modelId" type="string">
+  `parakeet-tdt-0.6b-v3`
+</ParamField>
+
+<ParamField path="size" type="string">
+  680MB
+</ParamField>
+
+<ParamField path="language" type="string">
+  Multilingual (automatic detection)
+</ParamField>
+
+<ParamField path="supportedLanguages" type="array">
+  25 languages including:
+  - **Germanic**: English, German, Dutch, Swedish, Danish, Norwegian
+  - **Romance**: French, Spanish, Portuguese, Italian, Romanian
+  - **Slavic**: Russian, Ukrainian, Polish, Czech, Slovak, Bulgarian, Croatian, Slovenian
+  - **Baltic**: Latvian, Lithuanian, Estonian
+  - **Other**: Greek, Hungarian, Maltese, Finnish
+</ParamField>
+
+<ParamField path="downloadUrl" type="string">
+  `https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2`
+</ParamField>
+
+<ParamField path="extractDir" type="string">
+  `sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8`
+</ParamField>
+
+<ParamField path="recommended" type="boolean">
+  `true`
+</ParamField>
+
+## Supported Languages (Full List)
+
+<Accordion title="View all 25 supported languages">
+  | Code | Language   | Code | Language   |
+  |------|------------|------|------------|
+  | bg   | Bulgarian  | it   | Italian    |
+  | hr   | Croatian   | lv   | Latvian    |
+  | cs   | Czech      | lt   | Lithuanian |
+  | da   | Danish     | mt   | Maltese    |
+  | nl   | Dutch      | pl   | Polish     |
+  | en   | English    | pt   | Portuguese |
+  | et   | Estonian   | ro   | Romanian   |
+  | fi   | Finnish    | sk   | Slovak     |
+  | fr   | French     | sl   | Slovenian  |
+  | de   | German     | es   | Spanish    |
+  | el   | Greek      | sv   | Swedish    |
+  | hu   | Hungarian  | ru   | Russian    |
+  | —    | —          | uk   | Ukrainian  |
+</Accordion>
+
+## When to Use Parakeet vs Whisper
+
+<Accordion title="Parakeet vs Whisper Comparison">
+  ### Use Parakeet When:
+  - You need **fast multilingual transcription** (25 European languages)
+  - You want **automatic language detection**
+  - You're transcribing European languages (especially Slavic/Baltic)
+  - You prefer lighter resource usage
+
+  ### Use Whisper When:
+  - You need support for **58+ languages** including Asian languages
+  - You require **highest accuracy** for English
+  - You're working with technical/medical terminology
+  - You need fine-grained model size options (6 models vs 1)
+</Accordion>
+
+## Downloading Models
+
+### Via UI
+
+Models can be downloaded from **Settings → Models → Parakeet Models**.
+
+### Programmatically
+
+<CodeGroup>
+```javascript Electron Renderer
+const result = await window.api.downloadParakeetModel('parakeet-tdt-0.6b-v3', (progress) => {
+  if (progress.type === 'progress') {
+    console.log(`Downloading: ${progress.percentage}%`);
+  } else if (progress.type === 'installing') {
+    console.log('Extracting archive...');
+  } else if (progress.type === 'complete') {
+    console.log('Installation complete!');
+  }
+});
+
+if (result.success) {
+  console.log(`Model installed to: ${result.path}`);
+}
+```
+
+```javascript Main Process
+const parakeetManager = new ParakeetManager();
+
+await parakeetManager.downloadParakeetModel('parakeet-tdt-0.6b-v3', (progress) => {
+  console.log(`${progress.type}: ${progress.percentage}%`);
+});
+```
+</CodeGroup>
+
+<Note>
+Parakeet models are distributed as `.tar.bz2` archives and are automatically extracted after download. The extraction process requires the `tar` command to be available on your system.
+</Note>
+
+## Checking Model Status
+
+```javascript
+const status = await window.api.checkParakeetModelStatus('parakeet-tdt-0.6b-v3');
+
+if (status.downloaded) {
+  console.log(`Model path: ${status.path}`);
+  console.log(`Size: ${status.size_mb}MB`);
+} else {
+  console.log('Model not downloaded');
+}
+```
+
+## Listing Models
+
+```javascript
+const { models, cache_dir } = await window.api.listParakeetModels();
+
+models.forEach(model => {
+  console.log(`${model.model}: ${model.downloaded ? 'Downloaded' : 'Not downloaded'}`);
+});
+```
+
+## Deleting Models
+
+<CodeGroup>
+```javascript Delete Single Model
+const result = await window.api.deleteParakeetModel('parakeet-tdt-0.6b-v3');
+
+if (result.deleted) {
+  console.log(`Freed ${result.freed_mb}MB of disk space`);
+}
+```
+
+```javascript Delete All Models
+const result = await window.api.deleteAllParakeetModels();
+
+console.log(`Deleted ${result.deleted_count} models`);
+console.log(`Freed ${result.freed_mb}MB`);
+```
+</CodeGroup>
+
+## Transcription
+
+```javascript
+const audioBlob = /* ArrayBuffer from MediaRecorder */;
+
+const result = await window.api.transcribeLocalParakeet(audioBlob, {
+  model: 'parakeet-tdt-0.6b-v3',
+  language: 'auto' // Automatic detection
+});
+
+if (result.success) {
+  console.log(`Transcribed text: ${result.text}`);
+} else {
+  console.error(`Error: ${result.message}`);
+}
+```
+
+## Server Management
+
+### Starting the Server
+
+```javascript
+const result = await window.api.startParakeetServer('parakeet-tdt-0.6b-v3');
+
+if (result.success) {
+  console.log(`Server running (this message won't appear - server starts automatically)`);
+} else {
+  console.error(result.reason);
+}
+```
+
+### Checking Server Status
+
+```javascript
+const status = await window.api.getParakeetServerStatus();
+
+console.log(`Ready: ${status.ready}`);
+console.log(`Current model: ${status.currentModel}`);
+```
+
+### Stopping the Server
+
+```javascript
+await window.api.stopParakeetServer();
+```
+
+## Server Pre-warming
+
+Like Whisper, Parakeet supports server pre-warming on startup:
+
+```javascript
+// Main process - automatic on startup
+await parakeetManager.initializeAtStartup({
+  localTranscriptionProvider: 'nvidia',
+  parakeetModel: 'parakeet-tdt-0.6b-v3'
+});
+```
+
+<Info>
+When `LOCAL_TRANSCRIPTION_PROVIDER=nvidia` is set in `.env`, the Parakeet server automatically starts on app launch, eliminating cold-start delays.
+</Info>
+
+## Provider Configuration
+
+Set Parakeet as your transcription provider:
+
+```javascript
+// Via settings store
+import { getSettings, saveSettings } from '@/stores/settingsStore';
+
+await saveSettings({
+  localTranscriptionProvider: 'nvidia',
+  parakeetModel: 'parakeet-tdt-0.6b-v3'
+});
+
+// This automatically saves to .env via saveAllKeysToEnvFile()
+```
+
+## Binary Location
+
+The sherpa-onnx binary is bundled with the app:
+
+```
+resources/bin/sherpa-onnx-{platform}-{arch}/
+```
+
+Supported platforms:
+- **macOS**: arm64, x64
+- **Linux**: x64, arm64
+- **Windows**: x64
+
+## Installation Check
+
+```javascript
+const status = await window.api.checkParakeetInstallation();
+
+if (status.installed && status.working) {
+  console.log(`sherpa-onnx binary: ${status.path}`);
+} else {
+  console.error('Parakeet not available');
+}
+```
+
+<Note>
+Parakeet models require the `tar` command for extraction. On Windows, ensure you have tar available (included in Windows 10+ by default).
+</Note>
+
+## Diagnostics
+
+```javascript
+const diagnostics = await window.api.getParakeetDiagnostics();
+
+console.log('Platform:', diagnostics.platform);
+console.log('sherpa-onnx:', diagnostics.sherpaOnnx);
+console.log('Downloaded models:', diagnostics.models);
+```
+
+## Model Registry
+
+All Parakeet models are defined in `src/models/modelRegistryData.json`:
+
+```json
+{
+  "parakeetModels": {
+    "parakeet-tdt-0.6b-v3": {
+      "name": "Parakeet TDT 0.6B",
+      "description": "Fast multilingual ASR with auto language detection (25 languages)",
+      "size": "680MB",
+      "sizeMb": 680,
+      "language": "multilingual",
+      "supportedLanguages": ["bg", "hr", "cs", ...],
+      "recommended": true,
+      "downloadUrl": "https://github.com/k2-fsa/sherpa-onnx/releases/...",
+      "extractDir": "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8"
+    }
+  }
+}
+```

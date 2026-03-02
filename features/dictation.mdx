@@ -1,0 +1,250 @@
+---
+title: "Basic Dictation"
+description: "Learn how to use OpenWhispr's voice-to-text dictation interface for hands-free typing"
+---
+
+OpenWhispr provides a minimal, always-accessible dictation interface that lets you convert speech to text anywhere on your system.
+
+## Getting Started
+
+Once OpenWhispr is running, you'll see a small floating panel in the bottom-right corner of your screen. This is your dictation control center.
+
+<Steps>
+  <Step title="Open any application">
+    Navigate to any text field where you want to dictate — email, document, chat, terminal, or code editor.
+  </Step>
+  
+  <Step title="Position your cursor">
+    Click in the text field where you want the transcribed text to appear.
+  </Step>
+  
+  <Step title="Start dictating">
+    Press your hotkey (default: backtick \`) or click the floating microphone button. The button will turn blue and show a pulsing animation.
+  </Step>
+  
+  <Step title="Speak naturally">
+    Dictate your text in a natural speaking voice. The recording indicator shows that OpenWhispr is listening.
+  </Step>
+  
+  <Step title="Stop recording">
+    Press the hotkey again or click the microphone button. The button will change to show processing waves.
+  </Step>
+  
+  <Step title="Text appears automatically">
+    Once transcription is complete, the text is automatically pasted at your cursor location.
+  </Step>
+</Steps>
+
+## Activation Modes
+
+OpenWhispr supports two activation modes to match your workflow:
+
+<Tabs>
+  <Tab title="Tap-to-Talk">
+    **How it works**: Press the hotkey once to start recording, press again to stop.
+    
+    **Best for**:
+    - Longer dictations
+    - When you need to pause and think
+    - Multi-sentence paragraphs
+    - Hands-free operation after starting
+    
+    **Example**: Press \`, speak for 30 seconds about your meeting notes, press \` again to finish.
+  </Tab>
+  
+  <Tab title="Push-to-Talk">
+    **How it works**: Hold down the hotkey while speaking, release to stop and transcribe.
+    
+    **Best for**:
+    - Quick snippets
+    - Single sentences or commands
+    - Precise start/stop timing
+    - Professional/gaming-style input
+    
+    **Example**: Hold \`, say "Thank you for your email," release \`.
+    
+    <Note>
+      Push-to-Talk requires a compatible keyboard listener:
+      - **Windows**: Fully supported with native key listener
+      - **macOS**: Fully supported
+      - **Linux GNOME Wayland**: Not available (uses tap-to-talk only)
+      - **Other Linux**: Fully supported
+    </Note>
+  </Tab>
+</Tabs>
+
+You can switch between modes in **Settings → Hotkeys → Activation Mode**.
+
+## Visual Feedback
+
+The floating panel provides real-time status updates:
+
+| State | Visual Indicator | Meaning |
+|-------|-----------------|----------|
+| **Idle** | Small gray button with sound wave icon | Ready to record |
+| **Recording** | Blue button with pulsing animation | Actively listening to your voice |
+| **Processing** | Orange button with wave animation | Transcribing your speech |
+| **Hover** | Slightly enlarged with tooltip | Shows current hotkey |
+
+<Tip>
+  You can cancel an in-progress recording or transcription by clicking the small **X** button that appears when you hover over the panel.
+</Tip>
+
+## Draggable Positioning
+
+The dictation panel can be moved anywhere on your screen:
+
+1. **Click and hold** on the microphone button
+2. **Drag** to your preferred location
+3. **Release** to drop the panel
+
+Your position is saved automatically and restored when you restart OpenWhispr.
+
+<Info>
+  If the panel ever appears off-screen (e.g., after changing monitor setup), restart OpenWhispr to reset it to the default bottom-right position.
+</Info>
+
+## Automatic Pasting
+
+By default, transcribed text is **automatically pasted** at your cursor location using native system clipboard and paste simulation.
+
+### How It Works
+
+<Steps>
+  <Step title="Clipboard copy">
+    Transcribed text is copied to your system clipboard
+  </Step>
+  <Step title="Paste simulation">
+    OpenWhispr simulates Ctrl+V (Cmd+V on macOS) or Ctrl+Shift+V in terminals
+  </Step>
+  <Step title="Text appears">
+    Your dictated text appears exactly where you had your cursor
+  </Step>
+</Steps>
+
+### Platform-Specific Behavior
+
+<Accordion title="macOS">
+  - Uses AppleScript for reliable pasting
+  - Requires **Accessibility permissions** (granted during setup)
+  - Falls back to manual paste if permissions are missing
+  - Opens accessibility settings automatically when needed
+</Accordion>
+
+<Accordion title="Windows">
+  - Uses native `SendInput` API via compiled C binary
+  - Automatically detects terminal windows and uses Ctrl+Shift+V
+  - No special permissions required
+  - Falls back to PowerShell SendKeys if native binary unavailable
+</Accordion>
+
+<Accordion title="Linux">
+  - **X11**: Uses native XTest extension (no dependencies)
+  - **Wayland**: Uses uinput virtual keyboard or wtype/ydotool
+  - Detects 20+ terminal emulators for Ctrl+Shift+V
+  - Install `xdotool` (X11) or `wtype`/`ydotool` (Wayland) for best results
+  - Text always copied to clipboard even if paste fails
+</Accordion>
+
+<Warning>
+  If automatic pasting doesn't work, the text is still on your clipboard — just press Ctrl+V (Cmd+V on macOS) to paste manually.
+</Warning>
+
+## Customizing Your Hotkey
+
+The default hotkey is the backtick key (\`), but you can customize it:
+
+1. Open **Settings → Hotkeys**
+2. Click in the **Global Hotkey** field
+3. Press your desired key combination (e.g., `Ctrl+Shift+Space`)
+4. Click **Save**
+
+OpenWhispr supports:
+- Single keys: F8, F9, backtick, etc.
+- Modifier combinations: Cmd+Shift+K, Ctrl+Alt+D, etc.
+- Special keys: Fn/Globe key on macOS
+
+<Tip>
+  If your chosen hotkey is already in use by another app, OpenWhispr will automatically fall back to F8 or F9 and notify you.
+</Tip>
+
+## Hiding the Floating Panel
+
+You can hide the panel when not in use:
+
+### Manual Hide
+- **Right-click** the panel and select **Hide for Now**
+- Press **Escape** to hide temporarily
+- The panel reappears when you press your global hotkey
+
+### Auto-Hide (Optional)
+Enable in **Settings → General → Auto-hide floating panel**:
+- Panel automatically hides after transcription completes
+- Reappears when you start dictating
+- Perfect for minimal desktop setups
+
+## Tips for Best Results
+
+<CardGroup cols={2}>
+  <Card title="Speak Clearly" icon="microphone">
+    Use your normal speaking voice at a moderate pace. No need to shout or speak robotically.
+  </Card>
+  
+  <Card title="Reduce Background Noise" icon="volume-x">
+    Record in a quiet environment for best accuracy. Close windows, mute notifications, etc.
+  </Card>
+  
+  <Card title="Use Proper Microphone" icon="headphones">
+    A quality USB or headset microphone performs better than built-in laptop mics.
+  </Card>
+  
+  <Card title="Punctuate Naturally" icon="message-square">
+    Say "period", "comma", "question mark" to add punctuation, or edit afterwards.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<Accordion title="No microphone detected">
+  1. Check that your microphone is plugged in and enabled
+  2. Grant microphone permissions in system settings
+  3. Restart OpenWhispr
+  4. Use **Settings → Microphone** to select the correct input device
+</Accordion>
+
+<Accordion title="Hotkey not working">
+  1. Check if another app is using the same hotkey
+  2. Try a different key combination in Settings
+  3. On GNOME Wayland, check **Settings → Keyboard → Shortcuts** for conflicts
+  4. Restart OpenWhispr after changing hotkeys
+</Accordion>
+
+<Accordion title="Text not pasting automatically">
+  - **macOS**: Grant Accessibility permissions in System Settings → Privacy & Security
+  - **Linux**: Install `xdotool` (X11) or `wtype`/`ydotool` (Wayland)
+  - **All platforms**: Text is always copied to clipboard — use Ctrl+V to paste manually
+</Accordion>
+
+<Accordion title="Panel disappeared off screen">
+  Restart OpenWhispr to reset the panel to the default bottom-right position.
+</Accordion>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Transcription Modes" icon="cloud" href="/features/transcription-modes">
+    Choose between cloud, BYOK, or local processing
+  </Card>
+  
+  <Card title="AI Processing" icon="sparkles" href="/features/ai-processing">
+    Use AI to format, enhance, or transform your dictation
+  </Card>
+  
+  <Card title="Custom Dictionary" icon="book-open" href="/features/custom-dictionary">
+    Improve accuracy for names and technical terms
+  </Card>
+  
+  <Card title="Notes System" icon="file-text" href="/features/notes-system">
+    Create and organize voice notes with folders
+  </Card>
+</CardGroup>

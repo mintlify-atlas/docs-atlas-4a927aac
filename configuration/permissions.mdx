@@ -1,0 +1,471 @@
+---
+title: System Permissions
+description: Required permissions for microphone access, auto-paste, and platform-specific features
+---
+
+## Overview
+
+OpenWhispr requires specific system permissions to function properly. The required permissions vary by platform and feature usage.
+
+<Info>
+  OpenWhispr only requests permissions that are essential for its core functionality. No analytics or telemetry permissions are requested.
+</Info>
+
+## Required Permissions by Platform
+
+### macOS
+
+<Tabs>
+  <Tab title="Microphone Access">
+    **Required for:** Recording audio for transcription
+    
+    **Status:** Required
+    
+    **How to grant:**
+    1. macOS prompts automatically on first use
+    2. Or go to **System Settings** → **Privacy & Security** → **Microphone**
+    3. Enable the checkbox next to OpenWhispr
+    
+    **Troubleshooting:**
+    - If permission was denied, toggle it off and on again
+    - Restart OpenWhispr after changing permissions
+  </Tab>
+  
+  <Tab title="Accessibility">
+    **Required for:** Auto-paste transcribed text at cursor location
+    
+    **Status:** Optional (required for auto-paste feature)
+    
+    **How it works:**
+    - OpenWhispr uses AppleScript to simulate keyboard paste (`Cmd+V`)
+    - Accessibility permission allows AppleScript to control other apps
+    
+    **How to grant:**
+    1. Go to **System Settings** → **Privacy & Security** → **Accessibility**
+    2. Click the lock icon to make changes
+    3. Click **+** and add OpenWhispr
+    4. Enable the checkbox next to OpenWhispr
+    
+    **Alternative:**
+    - Text is always copied to clipboard
+    - Manually paste with `Cmd+V` if you don't grant accessibility permission
+  </Tab>
+</Tabs>
+
+### Windows
+
+<Tabs>
+  <Tab title="Microphone Access">
+    **Required for:** Recording audio for transcription
+    
+    **Status:** Required
+    
+    **How to grant:**
+    1. Windows prompts automatically on first use
+    2. Or go to **Settings** → **Privacy** → **Microphone**
+    3. Enable "Allow apps to access your microphone"
+    4. Enable "Allow desktop apps to access your microphone"
+    
+    **Quick access:**
+    - Press `Win+I` to open Settings
+    - Or use URI: `ms-settings:privacy-microphone`
+  </Tab>
+  
+  <Tab title="Auto-Paste">
+    **Required for:** Auto-paste transcribed text
+    
+    **Status:** No special permission needed
+    
+    **How it works:**
+    - Uses native Windows `SendInput` API via `windows-fast-paste.exe`
+    - Falls back to PowerShell `SendKeys` if binary unavailable
+    - No accessibility permission required on Windows
+    
+    **Terminal detection:**
+    - Automatically uses `Ctrl+Shift+V` for terminal emulators
+    - Uses `Ctrl+V` for regular applications
+  </Tab>
+</Tabs>
+
+### Linux
+
+<Tabs>
+  <Tab title="Microphone Access">
+    **Required for:** Recording audio for transcription
+    
+    **Status:** Required
+    
+    **How to grant:**
+    
+    **PulseAudio/PipeWire:**
+    - No permission dialog (desktop apps have microphone access by default)
+    - Configure devices in `pavucontrol` or your system settings
+    
+    **Flatpak:**
+    - Flatpak includes microphone permission in the manifest
+    - Use Flatseal to verify/adjust permissions if needed
+    
+    **Install audio control tools:**
+    ```bash
+    # Debian/Ubuntu
+    sudo apt install pavucontrol
+    
+    # Fedora/RHEL
+    sudo dnf install pavucontrol
+    
+    # Arch
+    sudo pacman -S pavucontrol
+    ```
+  </Tab>
+  
+  <Tab title="Auto-Paste">
+    **Required for:** Auto-paste transcribed text
+    
+    **Status:** Optional (requires paste tool installation)
+    
+    **How it works:**
+    - Uses native `linux-fast-paste` binary (XTest for X11, uinput for Wayland)
+    - Falls back to external tools: `wtype`, `ydotool`, or `xdotool`
+    
+    **Install paste tools:**
+    
+    **For X11:**
+    ```bash
+    # Debian/Ubuntu
+    sudo apt install xdotool
+    
+    # Fedora/RHEL
+    sudo dnf install xdotool
+    
+    # Arch
+    sudo pacman -S xdotool
+    ```
+    
+    **For Wayland (choose one):**
+    ```bash
+    # Option 1: wtype (recommended for wlroots compositors)
+    sudo apt install wtype       # Debian/Ubuntu
+    sudo dnf install wtype       # Fedora/RHEL
+    sudo pacman -S wtype         # Arch
+    
+    # Option 2: ydotool (works on more compositors)
+    sudo apt install ydotool     # Debian/Ubuntu
+    sudo dnf install ydotool     # Fedora/RHEL
+    sudo pacman -S ydotool       # Arch
+    
+    # Enable ydotool daemon
+    sudo systemctl enable --now ydotoold
+    ```
+    
+    **For clipboard sharing (Wayland):**
+    ```bash
+    sudo apt install wl-clipboard    # Debian/Ubuntu
+    sudo dnf install wl-clipboard    # Fedora/RHEL
+    sudo pacman -S wl-clipboard      # Arch
+    ```
+  </Tab>
+  
+  <Tab title="GNOME Wayland Hotkeys">
+    **Required for:** Global hotkeys on GNOME Wayland
+    
+    **Status:** Automatic (no manual setup needed)
+    
+    **How it works:**
+    - Hotkeys registered via D-Bus service (`com.openwhispr.App`)
+    - Shortcuts stored in gsettings at custom keybinding path
+    - Visible in GNOME Settings → Keyboard → Shortcuts
+    
+    **Verification:**
+    ```bash
+    # Check if D-Bus service is running
+    busctl --user list | grep openwhispr
+    
+    # View registered hotkey
+    gsettings get org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/openwhispr/ binding
+    ```
+    
+    **No additional permissions needed** - uses standard GNOME APIs
+  </Tab>
+</Tabs>
+
+## Granting Permissions
+
+### Using OpenWhispr's Built-in Links
+
+OpenWhispr provides quick access to system settings:
+
+<Steps>
+  <Step title="Open Control Panel">
+    Right-click the OpenWhispr tray icon and select **Control Panel**.
+  </Step>
+  
+  <Step title="Navigate to Permissions Section">
+    Go to **Settings** → **Privacy & Data** → **Permissions**.
+  </Step>
+  
+  <Step title="Click the Permission Button">
+    Click the button for the permission you need to grant:
+    - **Open Microphone Settings** - Opens microphone privacy settings
+    - **Open Accessibility Settings** (macOS only) - Opens accessibility settings
+    - **Open Sound Input Settings** - Opens audio device configuration
+  </Step>
+  
+  <Step title="Grant Permission in System Settings">
+    The system settings app will open to the correct page.
+    
+    Enable the permission and return to OpenWhispr.
+  </Step>
+</Steps>
+
+<Note>
+  On Linux, these buttons are labeled differently since there's no standardized settings URL scheme. Users must manually navigate to their desktop environment's settings.
+</Note>
+
+## Platform-Specific Settings URLs
+
+### macOS
+
+OpenWhispr uses these URL schemes to open system settings:
+
+```
+Microphone Privacy:
+x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone
+
+Accessibility:
+x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility
+
+Sound Input:
+x-apple.systempreferences:com.apple.preference.sound?input
+```
+
+### Windows
+
+OpenWhispr uses these ms-settings URLs:
+
+```
+Microphone Privacy:
+ms-settings:privacy-microphone
+
+Sound Settings:
+ms-settings:sound
+```
+
+### Linux
+
+Linux doesn't have a standardized URL scheme for settings. Users must manually open:
+
+**GNOME:**
+- Settings → Privacy → Microphone (if available)
+- Settings → Sound → Input
+
+**KDE Plasma:**
+- System Settings → Multimedia → Audio Volume
+- System Settings → Privacy (if available)
+
+**Manual approach:**
+```bash
+# GNOME
+gnome-control-center sound
+
+# KDE
+systemsettings5 kcm_pulseaudio
+
+# Universal (PulseAudio control)
+pavucontrol
+```
+
+## Permission Warnings and Indicators
+
+### Microphone Permission Warning
+
+If microphone permission is denied or unavailable:
+
+- **Warning banner** appears in the main window
+- **Status indicator** shows "Microphone: Not Allowed"
+- **Action button** opens system settings
+
+### Accessibility Permission Warning (macOS)
+
+If accessibility permission is not granted:
+
+- **Info banner** explains auto-paste won't work
+- **Manual paste reminder** shows in toast notifications
+- **Text still copied** to clipboard for manual pasting
+
+<Info>
+  Accessibility permission is optional. OpenWhispr works without it, but transcribed text must be pasted manually.
+</Info>
+
+## Checking Permission Status
+
+OpenWhispr provides programmatic permission checks:
+
+### Via IPC (Renderer Process)
+
+```typescript
+// Check microphone permission
+const micStatus = await window.electronAPI.checkMicrophonePermission();
+// Returns: { granted: boolean, status: 'granted' | 'denied' | 'unknown' }
+
+// Check accessibility permission (macOS only)
+const accessibilityStatus = await window.electronAPI.checkAccessibilityPermission();
+// Returns: { granted: boolean }
+```
+
+### Via usePermissions Hook
+
+```typescript
+import { usePermissions } from '../hooks/usePermissions';
+
+function MyComponent() {
+  const {
+    micPermission,
+    accessibilityPermission,
+    openMicPrivacySettings,
+    openAccessibilitySettings,
+  } = usePermissions();
+  
+  if (!micPermission.granted) {
+    return (
+      <div>
+        <p>Microphone access required</p>
+        <button onClick={openMicPrivacySettings}>
+          Open Settings
+        </button>
+      </div>
+    );
+  }
+  
+  return <div>Ready to record</div>;
+}
+```
+
+## Troubleshooting Permission Issues
+
+<Accordion title="Permission Granted But Still Not Working">
+  **macOS:**
+  1. Ensure OpenWhispr is in the allowed apps list
+  2. Toggle the permission off and back on
+  3. Restart OpenWhispr completely (Quit from tray icon)
+  4. If still not working, remove and re-add OpenWhispr to the permissions list
+  
+  **Windows:**
+  1. Check both "Allow apps to access microphone" AND "Allow desktop apps"
+  2. Restart OpenWhispr
+  3. Check Windows Defender isn't blocking the app
+  
+  **Linux:**
+  1. Check PulseAudio/PipeWire is running: `pactl info`
+  2. Verify device is not muted: `pavucontrol`
+  3. Check app has access to audio in Flatpak/Snap if sandboxed
+</Accordion>
+
+<Accordion title="Accessibility Permission Won't Save (macOS)">
+  **Solutions:**
+  1. Click the lock icon in System Settings to unlock
+  2. Add OpenWhispr using the + button (don't drag and drop)
+  3. If OpenWhispr already exists, remove it and add again
+  4. Ensure you're running the installed app, not from the DMG
+  5. Check you have admin privileges on your Mac
+</Accordion>
+
+<Accordion title="Auto-Paste Not Working (Linux)">
+  **For X11:**
+  1. Verify xdotool is installed: `which xdotool`
+  2. Test manually: `xdotool type "test"`
+  3. Check native binary: `~/.config/OpenWhispr/linux-fast-paste --help`
+  
+  **For Wayland:**
+  1. Check which paste tool is installed: `which wtype ydotool`
+  2. For ydotool, ensure daemon is running: `systemctl --user status ydotoold`
+  3. Start daemon if needed: `sudo systemctl enable --now ydotoold`
+  4. Test clipboard: `wl-paste`
+  
+  **For GNOME Wayland:**
+  - Auto-paste only works in XWayland apps (most Electron apps)
+  - Native Wayland apps require manual paste (Ctrl+V)
+  - Check terminal detection for terminal emulators
+</Accordion>
+
+<Accordion title="GNOME Wayland Hotkey Not Firing">
+  **Solutions:**
+  1. Check if hotkey conflicts with existing shortcuts:
+     ```bash
+     gsettings list-recursively org.gnome.settings-daemon.plugins.media-keys
+     ```
+  2. Verify D-Bus service is running:
+     ```bash
+     busctl --user list | grep openwhispr
+     ```
+  3. Test D-Bus manually:
+     ```bash
+     dbus-send --session --type=method_call \
+       --dest=com.openwhispr.App \
+       /com/openwhispr/App \
+       com.openwhispr.App.Toggle
+     ```
+  4. Check GNOME Settings → Keyboard → Shortcuts for conflicts
+  5. Try a different hotkey (e.g., `Alt+R` instead of backtick)
+</Accordion>
+
+## Privacy and Security
+
+### What OpenWhispr Can Access
+
+<Info>
+  OpenWhispr follows the principle of least privilege - it only requests permissions it absolutely needs.
+</Info>
+
+**Microphone:**
+- Access to record audio for transcription
+- Audio data processed locally or sent to chosen API provider
+- No audio stored permanently (only temporary files during processing)
+
+**Accessibility (macOS only):**
+- Ability to simulate keyboard input (paste command)
+- Only used to paste transcribed text
+- No logging or monitoring of other app activities
+
+**File System:**
+- Read/write access to app data directory for settings and database
+- Read access to model cache directory
+- No access to user files outside app directories
+
+### What OpenWhispr Cannot Access
+
+- **Webcam/Camera** - Never requested or used
+- **Location** - Not requested or tracked
+- **Contacts** - No access to contact lists
+- **Photos** - No access to photo library
+- **Other app data** - Sandboxed to OpenWhispr directories only
+- **Network traffic** - No packet sniffing or network monitoring
+
+### Data Storage
+
+All permissions are stored in:
+
+- **macOS:** System preference databases (managed by macOS)
+- **Windows:** Registry keys (managed by Windows)
+- **Linux:** Desktop environment settings or Flatpak permissions
+
+**OpenWhispr never stores permission state** - it queries the OS on each use.
+
+## Best Practices
+
+<Tip>
+  Grant permissions when prompted to ensure the best experience. You can always revoke them later in system settings.
+</Tip>
+
+**Recommended Setup:**
+
+1. **Grant microphone permission** (required) - Allow on first prompt
+2. **Grant accessibility permission** (macOS, optional) - Enables auto-paste convenience
+3. **Install paste tools** (Linux, optional) - For auto-paste functionality
+4. **Verify in Control Panel** - Check Settings → Privacy & Data for permission status
+
+**Security Tips:**
+
+- Only grant accessibility permission if you trust the app
+- Review permissions in system settings periodically
+- Revoke accessibility if you stop using auto-paste
+- Use local transcription for sensitive/private recordings
