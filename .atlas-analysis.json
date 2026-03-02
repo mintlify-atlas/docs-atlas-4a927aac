@@ -1,0 +1,105 @@
+{
+  "projectType": "saas",
+  "projectName": "OpenWhispr",
+  "projectDescription": "Privacy-first voice-to-text dictation app with local and cloud transcription, AI processing, and cross-platform support.",
+  "theme": "palm",
+  "primaryColor": "#6366f1",
+  "lightColor": "#818cf8",
+  "darkColor": "#4f46e5",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/dictation",
+              "features/transcription-modes",
+              "features/ai-processing",
+              "features/custom-dictionary",
+              "features/notes-system"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/hotkeys",
+              "configuration/api-keys",
+              "configuration/local-models",
+              "configuration/permissions"
+            ]
+          },
+          {
+            "group": "Platform Guides",
+            "pages": [
+              "platforms/macos",
+              "platforms/windows",
+              "platforms/linux"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/architecture",
+              "advanced/model-registry",
+              "advanced/building-from-source",
+              "advanced/troubleshooting"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "IPC API",
+            "pages": [
+              "api/overview",
+              "api/transcription",
+              "api/settings",
+              "api/database"
+            ]
+          },
+          {
+            "group": "Models",
+            "pages": [
+              "api/whisper-models",
+              "api/parakeet-models",
+              "api/ai-models"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Privacy-first voice dictation with local and cloud transcription",
+    "Multi-provider AI processing (OpenAI, Anthropic, Gemini, Groq, local models)",
+    "Cross-platform support (macOS, Windows, Linux)",
+    "OpenWhispr Cloud with free and Pro plans",
+    "Custom dictionary for improved transcription accuracy",
+    "Notes system with folders and AI actions",
+    "Global hotkeys and push-to-talk support",
+    "NVIDIA Parakeet and Whisper.cpp for local processing"
+  ],
+  "publicApiSurface": [
+    "window.api.transcribe(audioBlob, options)",
+    "window.api.getSettings()",
+    "window.api.updateSettings(settings)",
+    "window.api.getTranscriptionHistory()",
+    "window.api.downloadModel(modelName)",
+    "window.api.setHotkey(hotkey)",
+    "window.api.openMicrophoneSettings()",
+    "window.api.openAccessibilitySettings()",
+    "ReasoningService.processWithAI(text, provider, model)"
+  ]
+}
